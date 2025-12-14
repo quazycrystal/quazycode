@@ -1,5 +1,5 @@
 ---
-title: Quazy Algorithm Blog
+title: Welcome
 ---
-코린이의 알고리즘 공부 사이트입니다
-Algorithm Notes by a Beginner
+코린이의 알고리즘 공부 사이트입니다  
+A Coding Newbie's Algorithm Study Notes
