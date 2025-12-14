@@ -24,9 +24,10 @@ const config: QuartzConfig = {
       cdnCaching: true,
       typography: {
         header: "Schibsted Grotesk",
-        body: "poppins",
+        body: "Poppins",
         // "Source Sans Pro",
-        code: "IBM Plex Mono",
+        code: "Poppins",
+        // "IBM Plex Mono",
       },
       colors: {
         lightMode: {
@@ -46,8 +47,8 @@ const config: QuartzConfig = {
           gray: "#646464",
           darkgray: "#d4d4d4",
           dark: "#ebebec",
-          secondary: "#0099ffff",
-          tertiary: "#50bfa3ff",
+          secondary: "#55bbffff",
+          tertiary: "#005effff",
           highlight: "#009dff26",
           textHighlight: "#fff20088",
           //secondary: "#7b97aa",

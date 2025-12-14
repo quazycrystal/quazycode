@@ -1,3 +1,21 @@
 @use "./base.scss";
 
+/* 푸터 아이콘 스타일 */
+.footer-icons {
+  display: flex;
+  justify-content: center; /* 가운데 정렬 */
+  gap: 15px; /* 아이콘 사이 간격 */
+  margin-top: 10px;
+}
+
+.social-icon {
+  width: 24px;   /* 아이콘 크기 (원하는대로 조절하세요) */
+  height: 24px;
+  opacity: 1; 
+}
+
+.social-icon:hover {
+  transform: scale(1.2); /* (보너스) 살짝 1.1배 커지는 효과 */
+}
+
 // put your custom CSS here!
