@@ -4,7 +4,7 @@ list(map(int, input().split()))
 #### -  쓸모 없는 input은 저장 안 하고 실행만 시켜서 날리기
 input()에 변수 지정 안 하기
 
----
+***
 
 ```python
 T = int(input())
