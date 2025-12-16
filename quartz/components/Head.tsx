@@ -5,6 +5,7 @@ import { googleFontHref, googleFontSubsetHref } from "../util/theme"
 import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "./types"
 import { unescapeHTML } from "../util/escape"
 import { CustomOgImagesEmitterName } from "../plugins/emitters/ogImage"
+
 export default (() => {
   const Head: QuartzComponent = ({
     cfg,
@@ -85,6 +86,25 @@ export default (() => {
         <link rel="icon" href={iconPath} />
         <meta name="description" content={description} />
         <meta name="generator" content="Quartz" />
+
+        {/* [여기에 추가됨] 커스텀 폰트 설정 (경로 자동 계산) */}
+        <style>{`
+          @font-face {
+            font-family: 'Mazreha';
+            src: url('${baseDir}/static/fonts/Mazreha-5146L.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+          }
+
+          @font-face {
+            font-family: 'Greca';
+            src: url('${baseDir}/static/fonts/Greca-Convert.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+          }
+        `}</style>
 
         {css.map((resource) => CSSResourceToStyleElement(resource, true))}
         {js

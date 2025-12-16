@@ -151,13 +151,13 @@ a {
     &.flex-component {
       display: flex;
     }
-    display: initial;
+    display: flex; //initial;
   }
 }
 
 .page {
   max-width: calc(#{map.get($breakpoints, desktop)} + 300px);
-  margin: 0 auto;
+  margin: 0 1rem; //auto;
   & article {
     & > h1 {
       font-size: 2rem;
@@ -211,7 +211,7 @@ a {
       padding: 0 1rem;
     }
     @media all and ($mobile) {
-      margin: 0 auto;
+      margin: 0 0rem; //auto; //search
     }
 
     & .sidebar {
@@ -265,7 +265,7 @@ a {
     }
     & .page-header,
     & .page-footer {
-      margin-top: 1rem;
+      margin-top: 0rem; //1rem;
     }
 
     & .page-header {
@@ -306,7 +306,7 @@ a {
 }
 
 .footnotes {
-  margin-top: 2rem;
+  margin-top: 0rem; //2rem;
   border-top: 1px solid var(--lightgray);
 }
 

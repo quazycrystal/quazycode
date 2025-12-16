@@ -18,29 +18,6 @@
   transform: scale(1.2); /* (보너스) 살짝 1.1배 커지는 효과 */
 }
 
-/* 1. 폰트 파일 등록 (@font-face) */
-@font-face {
-  font-family: 'Greca'; /* 내가 부르고 싶은 이름 아무거나 */
-  /* 경로 주의: /static/폴더명/파일명 */
-  src: url('/static/fonts/Greca-Convert.ttf') format('truetype'); 
-  font-weight: normal;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'Mazreha'; /* 내가 부르고 싶은 이름 아무거나 */
-  /* 경로 주의: /static/폴더명/파일명 */
-  src: url('/static/fonts/Mazreha-5146L.ttf') format('truetype'); 
-  font-weight: normal;
-  font-style: normal;
-}
-
-/* (참고) 파일 확장자에 따라 format 부분이 다릅니다:
-   .ttf  -> format('truetype')
-   .otf  -> format('opentype')
-   .woff2 -> format('woff2')
-*/
-
 /* Page Title (좌측 상단 웹사이트 제목) 폰트 강제 변경 */
 .page-title {
   font-size: 1.75rem !important; /* !important는 강제 적용입니다 */
@@ -50,11 +27,4 @@
   a {
     font-weight: 700;
   }
-}
-
-/* quartz/styles/custom.scss */
-
-/* 1. 본문 영역(.page)의 아래쪽 공백 줄이기 */
-.body {
-  padding-bottom: 0 !important; /* 기본값이 꽤 큽니다. 0이나 1rem 정도로 조절하세요 */
 }

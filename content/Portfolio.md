@@ -2,4 +2,4 @@
 title: Portfolio
 externalUrl: "https://quazycrystal.github.io/"
 ---
-[[index]]
+https://quazycrystal.github.io/
