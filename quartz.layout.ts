@@ -1,5 +1,6 @@
 import { PageLayout, SharedLayout } from "./quartz/cfg"
 import * as Component from "./quartz/components"
+import HomeGraph from "./quartz/components/HomeGraph" // <--- 이 줄 추가
 
 // components shared across all pages
 export const sharedPageComponents: SharedLayout = {
@@ -24,6 +25,7 @@ export const defaultContentPageLayout: PageLayout = {
     Component.ArticleTitle(),
     Component.ContentMeta(),
     Component.TagList(),
+    HomeGraph(), // <--- 여기에 추가하세요!
   ],
   left: [
     Component.PageTitle(),
