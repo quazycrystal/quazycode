@@ -1,6 +1,8 @@
 import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "./types"
+// simplifySlug import 삭제됨
 
 export default (() => {
+  // cfg 파라미터 삭제됨
   const HomeGraph: QuartzComponent = ({ allFiles, fileData }: QuartzComponentProps) => {
     
     // 1. 홈 화면(index)이 아니면 그리지 않음
@@ -19,12 +21,14 @@ export default (() => {
         id: slug,
         title: data.title ?? slug,
         category: (data.tags && data.tags.length > 0) ? data.tags[0] : "etc", 
-        imgUrl: data.heroImage ? `/${data.heroImage}` : "https://placehold.co/100x100?text=No+Img",
         
-        // [외부 링크 처리] externalUrl이 있으면 그걸 쓰고, 없으면 내부 링크
-        link: data.externalUrl ? data.externalUrl : `/${slug}`,
+        // 마크다운 프론트매터의 'imgUrl' (없으면 기본 이미지)
+        imgUrl: data.imgUrl ? data.imgUrl : "https://placehold.co/100x100?text=No+Img",
         
-        // [핵심] 이 노드가 외부 링크인지 표시 (true/false)
+        // 외부 링크 처리
+        link: data.externalUrl ? data.externalUrl : slug,
+        
+        // [핵심] 외부 링크 여부
         isExternal: !!data.externalUrl,
         
         links: file.links ?? [], 
@@ -33,34 +37,33 @@ export default (() => {
     })
 
     // 3. 더미 데이터 (데이터가 없을 때 테스트용)
-    // [수정됨] 여기에도 'isExternal'을 넣어줘야 타입 에러가 안 납니다!
     if (nodes.length === 0) {
-        console.log("[HomeGraph] No content found. Using DUMMY data for testing.")
+        // console.log("[HomeGraph] No content found. Using DUMMY data.")
         nodes = [
             { 
               id: "test-1", title: "Quartz Connected", category: "Graph", 
               imgUrl: "https://placehold.co/100x100/orange/white", 
               link: "#", size: 80, links: ["test-2", "test-3"], 
-              isExternal: false // <--- 이거 추가됨
+              isExternal: false 
             },
             { 
               id: "test-2", title: "Data Flow", category: "Test", 
               imgUrl: "https://placehold.co/100x100/blue/white", 
               link: "#", size: 50, links: [], 
-              isExternal: false // <--- 이거 추가됨
+              isExternal: false 
             },
             { 
               id: "test-3", title: "Google Link", category: "External", 
               imgUrl: "https://placehold.co/100x100/green/white", 
               link: "https://google.com", size: 50, links: [], 
-              isExternal: true // <--- 이거 추가됨
+              isExternal: true 
             }
         ]
     }
 
     return (
       <div class="home-graph-wrapper">
-        <div id="image-graph" style={{ width: "100%", height: "600px", position: "relative", overflow: "hidden" }}></div>
+        <div id="image-graph" style={{ width: "100%", height: "50%", position: "relative", overflow: "hidden" }}></div>
         
         {/* 데이터 주입 */}
         <script dangerouslySetInnerHTML={{__html: `
@@ -69,9 +72,7 @@ export default (() => {
         
         {/* 라이브러리 및 스크립트 로드 */}
         <script src="https://d3js.org/d3.v7.min.js"></script>
-        {/* 링크 문제 -  Quartz 빌드 함수를 이용 (추천) */}
-        <script src={fileData.slug === "index" ? "./static/home-graph.js" : "../static/home-graph.js"}></script>
-        {/* <script src="/static/home-graph.js"></script> */}
+        <script src="./static/home-graph.js"></script>
       </div>
     )
   }

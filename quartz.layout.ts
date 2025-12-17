@@ -25,8 +25,13 @@ export const defaultContentPageLayout: PageLayout = {
     Component.ArticleTitle(),
     Component.ContentMeta(),
     Component.TagList(),
-    HomeGraph(), // <--- 여기에 추가하세요!
   ],
+
+  afterBody: [
+    HomeGraph(), 
+    // 필요한 경우 Backlinks나 Graph 등 다른 컴포넌트도 여기에 있을 수 있습니다.
+  ],
+
   left: [
     Component.PageTitle(),
     Component.MobileOnly(Component.Spacer()),
@@ -52,6 +57,10 @@ export const defaultContentPageLayout: PageLayout = {
 // components for pages that display lists of pages  (e.g. tags or folders)
 export const defaultListPageLayout: PageLayout = {
   beforeBody: [Component.Breadcrumbs(), Component.ArticleTitle(), Component.ContentMeta()],
+
+  afterBody: [
+  ],
+
   left: [
     Component.PageTitle(),
     Component.MobileOnly(Component.Spacer()),
