@@ -69,7 +69,9 @@ export default (() => {
         
         {/* 라이브러리 및 스크립트 로드 */}
         <script src="https://d3js.org/d3.v7.min.js"></script>
-        <script src="/static/home-graph.js"></script>
+        {/* 링크 문제 -  Quartz 빌드 함수를 이용 (추천) */}
+        <script src={fileData.slug === "index" ? "./static/home-graph.js" : "../static/home-graph.js"}></script>
+        {/* <script src="/static/home-graph.js"></script> */}
       </div>
     )
   }
