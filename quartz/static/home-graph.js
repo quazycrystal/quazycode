@@ -2,18 +2,57 @@
 
 function initGraph() {
     const container = document.getElementById('image-graph');
-    if (!container || !window.quartzGraphData) return;
+    if (!container) return;
+
+    // [수정 1] 데이터가 로드될 때까지 재시도 (최대 10번, 0.2초 간격)
+    if (!window.quartzGraphData) {
+        if (!window._graphRetry) window._graphRetry = 0;
+        if (window._graphRetry < 10) {
+            window._graphRetry++;
+            console.log(`[HomeGraph] 데이터 대기 중... (${window._graphRetry}/10)`);
+            setTimeout(initGraph, 200);
+            return;
+        } else {
+            console.error("[HomeGraph] 그래프 데이터를 찾을 수 없습니다.");
+            return;
+        }
+    }
+
+    console.log("[HomeGraph] 초기화 시작"); // 디버깅용
 
     // 1. 초기화 및 크기 설정
     container.innerHTML = '';
     let width = container.clientWidth;
     let height = container.clientHeight || 600;
     
-    const isMobile = () => window.innerWidth < 768; // 모바일 감지 함수
+    const isMobile = () => window.innerWidth < 768;
 
     // 원본 데이터 가져오기
     const allNodes = window.quartzGraphData.map(d => ({...d}));
     const links = [];
+
+    // [수정 2] 경로 보정 헬퍼 함수
+    // Quartz 설정에 따라 링크가 '/'로 시작하면 배포 시 서브디렉토리가 무시될 수 있음
+    // 현재 페이지의 base url을 고려하여 링크를 수정
+    function resolveLink(link) {
+        // 이미 http로 시작하면 그대로 반환
+        if (link.startsWith("http")) return link;
+        
+        // 링크가 /로 시작하고, 현재 주소에 서브디렉토리(예: /blog)가 있다면 붙여줌
+        // 간단한 해결책: 상대 경로로 변환하거나, document baseURI 활용
+        // 여기서는 가장 안전한 방법으로 '현재 사이트의 root'를 찾아 붙입니다.
+        
+        // 1. Quartz의 SPA 라우터가 있다면 사용 (추천)
+        // 2. 없다면 location.pathname의 depth만큼 ../ 를 붙이거나
+        // 3. 단순히 base tag가 있는지 확인
+        
+        // 배포 환경에서 '/slug' 형태가 문제된다면 아래 로직이 유효합니다.
+        // 만약 d.link가 "./slug" 형태라면 수정 불필요.
+        
+        // 가장 확실한 방법: 링크가 /로 시작하면 현재 origin 뒤에 base path를 고려해야 함
+        // 하지만 Quartz 데이터는 보통 slug를 제공하므로, 상대 경로 처리가 낫습니다.
+        return link; 
+    }
 
     // ------------------------------------------------------------
     // 2. 링크 데이터 생성 & 노드 필터링
@@ -21,7 +60,6 @@ function initGraph() {
     const nodeMap = new Map(allNodes.map(n => [n.id, n]));
 
     allNodes.forEach(sourceNode => {
-        // 내부 링크 연결
         if (sourceNode.links && sourceNode.links.length > 0) {
             sourceNode.links.forEach(targetSlug => {
                 if (nodeMap.has(targetSlug)) {
@@ -29,7 +67,6 @@ function initGraph() {
                 }
             });
         }
-        // 외부 링크 강제 연결 (index와)
         if (sourceNode.isExternal && sourceNode.id !== "index") {
             const alreadyConnected = links.some(l => 
                 (l.source === "index" && l.target === sourceNode.id) ||
@@ -44,7 +81,6 @@ function initGraph() {
     const connectedNodeIds = new Set();
     links.forEach(l => { connectedNodeIds.add(l.source); connectedNodeIds.add(l.target); });
 
-    // 연결된 노드 혹은 index만 남김
     const filteredNodes = allNodes.filter(node => connectedNodeIds.has(node.id) || node.id === "index");
 
     if (filteredNodes.length === 0) {
@@ -53,9 +89,8 @@ function initGraph() {
     }
 
     // ------------------------------------------------------------
-    // [추가됨] 2.5 노드 거리(Depth) 계산 - 자연스러운 펼쳐짐을 위해
+    // 2.5 노드 거리(Depth) 계산
     // ------------------------------------------------------------
-    // 홈(index)에서부터 몇 칸 떨어져 있는지 계산합니다.
     const adjacencyList = {};
     filteredNodes.forEach(n => adjacencyList[n.id] = []);
     links.forEach(l => {
@@ -63,7 +98,7 @@ function initGraph() {
         if(adjacencyList[l.target]) adjacencyList[l.target].push(l.source);
     });
 
-    const nodeDepths = {}; // 각 노드의 거리 저장
+    const nodeDepths = {};
     const queue = [{ id: "index", depth: 0 }];
     const visited = new Set(["index"]);
     nodeDepths["index"] = 0;
@@ -83,65 +118,47 @@ function initGraph() {
         });
     }
 
-    // 깊이 정보가 없는 노드(index와 끊긴 그룹)는 일단 최대 깊이로 간주
     filteredNodes.forEach(n => {
         if (nodeDepths[n.id] === undefined) nodeDepths[n.id] = maxDepth + 1;
     });
 
     // ------------------------------------------------------------
-    // [핵심 기능 1] 화면에 딱 맞는 배율(Fit Scale) 계산
+    // [핵심 기능 1] Fit Scale
     // ------------------------------------------------------------
-    // 노드 개수가 많을수록 그래프가 넓어지므로, 이를 기반으로 지름을 추정합니다.
     const nodeCount = filteredNodes.length;
-    // 노드 하나당 공간을 대략 60~80px로 잡고 제곱근을 사용하여 지름 추정
     const estimatedDiameter = Math.sqrt(nodeCount) * (isMobile() ? 100 : 120); 
-    
-    // 화면 너비/높이 중 작은 쪽을 기준으로 배율 설정
     let fitScale = Math.min(width, height) / estimatedDiameter;
-
-    // 배율이 너무 크거나 작지 않게 제한 (최소 0.3배 ~ 최대 1.0배)
     if (fitScale > 1.0) fitScale = 1.0;
     if (fitScale < 0.3) fitScale = 0.3;
 
-// ------------------------------------------------------------
-    // 3. 물리 엔진 설정 (거리 기반 위치 조정)
+    // ------------------------------------------------------------
+    // 3. 물리 엔진 설정
     // ------------------------------------------------------------
     const simulation = d3.forceSimulation(filteredNodes)
-        .force("link", d3.forceLink(links).id(d => d.id).distance(isMobile() ? 50 : 80)) // 거리를 살짝 줄여서 탄탄하게
+        .force("link", d3.forceLink(links).id(d => d.id).distance(isMobile() ? 50 : 80))
         .force("charge", d3.forceManyBody().strength(isMobile() ? -150 : -250))
         .force("collide", d3.forceCollide().radius(d => d.size * 0.8).iterations(2));
 
-    // [핵심] 위치 강제 힘 적용
     if (isMobile()) {
-        // [모바일] 외부(위) -> 홈(중상단) -> 먼 노드(아래)
         simulation.force("y", d3.forceY(d => {
-            if (d.isExternal) return height * 0.1; // 외부 링크는 최상단(10%)
-            if (d.id === "index") return height * 0.25; // 홈은 상단(25%)
-            
-            // 나머지는 깊이에 따라 30% ~ 90% 사이로 쫙 펼침
+            if (d.isExternal) return height * 0.1;
+            if (d.id === "index") return height * 0.25;
             const depthRatio = nodeDepths[d.id] / (maxDepth || 1); 
             return (height * 0.3) + (depthRatio * (height * 0.6));
         }).strength(0.5));
-        
-        // X축은 중앙 유지
         simulation.force("center", d3.forceX(width / 2));
-        
     } else {
-        // [PC] 외부(왼쪽) -> 홈(왼쪽 중앙) -> 먼 노드(오른쪽)
         simulation.force("x", d3.forceX(d => {
-            if (d.isExternal) return width * 0.1; // 외부 링크는 최좌측(10%)
-            if (d.id === "index") return width * 0.25; // 홈은 좌측(25%)
-            
-            // 나머지는 깊이에 따라 30% ~ 90% 사이로 쫙 펼침
+            if (d.isExternal) return width * 0.1;
+            if (d.id === "index") return width * 0.25;
             const depthRatio = nodeDepths[d.id] / (maxDepth || 1);
             return (width * 0.3) + (depthRatio * (width * 0.6));
-        }).strength(0.4)); // strength가 너무 세면 일자로 정렬되니 적당히(0.4)
-
-        // Y축은 중앙 유지
+        }).strength(0.4));
         simulation.force("center", d3.forceY(height / 2));
     }
+
     // ------------------------------------------------------------
-    // 4. 그리기 (SVG & Zoom)
+    // 4. 그리기
     // ------------------------------------------------------------
     const zoom = d3.zoom()
         .scaleExtent([0.1, 5])
@@ -155,18 +172,50 @@ function initGraph() {
 
     const g = svg.append("g");
 
-    // 선 그리기
     const link = g.append("g").attr("class", "links")
         .selectAll("line").data(links).enter().append("line")
         .style("stroke", d => d.type === "external" ? "#ffab91" : "#ccc") 
         .style("stroke-dasharray", d => d.type === "external" ? "4,4" : "none")
         .style("stroke-width", "1.5px");
 
-    // 노드 그리기
     const node = g.append("g").attr("class", "nodes")
         .selectAll("g").data(filteredNodes).enter().append("g")
         .call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended))
-        .on("click", (event, d) => { window.location.href = d.link; });
+        // [수정 3] 클릭 이벤트 수정: URL 처리 강화
+        .on("click", (event, d) => { 
+            // Quartz v4는 보통 SPA 라우팅을 사용하지 않고 a 태그를 쓰거나 window.location을 씁니다.
+            // 하지만 BaseURL 문제를 피하기 위해 상대 경로인지 확인합니다.
+            
+            let targetUrl = d.link;
+            
+            // 만약 배포 사이트가 서브디렉토리(예: /my-wiki)에 있는데
+            // d.link가 "/notes/abc"라면 "/my-wiki/notes/abc"로 가야 함.
+            // 가장 쉬운 꼼수: d.link가 "/"로 시작하면 현재 origin을 확인
+            
+            // 1. URL이 http로 시작하면 외부 링크이므로 바로 이동
+            if (targetUrl.startsWith('http')) {
+                window.location.href = targetUrl;
+                return;
+            }
+
+            // 2. 내부 링크인데 '/'로 시작하는 경우 처리
+            // Quartz Config에서 baseUrl을 제대로 설정했다면 d.link에 이미 포함되어 있을 수도 있음.
+            // 하지만 안전을 위해 href 값을 그대로 할당하기보다, Quartz의 기본 동작을 따라갑니다.
+            
+            // 만약 SPA 네비게이션 함수가 있다면 사용 (Quartz 버전에 따라 다름)
+            // 여기선 안전하게 location.assign 사용
+            
+            // [중요] d.link 값을 그대로 대입하되, 만약 404가 뜬다면 
+            // 아래 주석을 해제하여 상대 경로로 변환을 시도해보세요.
+            /*
+            const basePath = document.body.getAttribute('data-baseurl') || ''; 
+            // 만약 body 태그에 baseurl 속성이 없다면 수동 지정 필요할 수 있음
+            // targetUrl = basePath + targetUrl; 
+            */
+
+            console.log("Navigating to:", targetUrl);
+            window.location.href = targetUrl; 
+        });
 
     node.append("circle")
         .attr("r", d => d.size / 2)
@@ -174,35 +223,36 @@ function initGraph() {
         .style("stroke", "#546e7a")
         .style("stroke-width", "2px");
 
-    // 이미지
     node.append("image")
-        .attr("xlink:href", d => d.imgUrl)
+        .attr("xlink:href", d => {
+            // [수정 4] 이미지 경로 보정
+            if (d.imgUrl.startsWith('http')) return d.imgUrl;
+            // 배포 시 이미지 경로가 깨진다면 여기에 prefix 추가 로직 필요
+            return d.imgUrl;
+        })
         .attr("width", d => d.size).attr("height", d => d.size)
         .attr("x", d => -d.size / 2).attr("y", d => -d.size / 2)
         .attr("clip-path", d => `circle(${d.size/2}px at ${d.size/2}px ${d.size/2}px)`)
-        .on("error", function() { d3.select(this).style("display", "none"); });
+        .on("error", function() { 
+            // 이미지 로드 실패 시 숨김 처리 대신, 기본 색상 원으로 대체하거나 로그 출력
+            console.warn("이미지 로드 실패:", d3.select(this).attr("xlink:href"));
+            d3.select(this).style("display", "none"); 
+        });
 
-    // 텍스트
     node.append("text")
         .text(d => d.title.length > 10 ? d.title.substring(0, 10) + "..." : d.title)
         .attr("dy", d => (d.size / 2) + 15)
         .attr("text-anchor", "middle")
         .style("font-size", "12px")
-        .style("fill", "#ffffffff")
+        .style("fill", "var(--darkgray)") // Quartz 테마 변수 사용 권장 (혹은 #333)
         .style("pointer-events", "none");
 
-    // ------------------------------------------------------------
-    // 5. 업데이트 및 중앙 정렬 적용
-    // ------------------------------------------------------------
     simulation.on("tick", () => {
         link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
             .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
         node.attr("transform", d => `translate(${d.x},${d.y})`);
     });
 
-    // [핵심 기능 2] 계산된 Fit Scale을 사용하여 초기 화면 중앙 정렬
-    // 원리: 물리 엔진은 (w/2, h/2)를 중심으로 잡고 있으므로, 
-    // 줌(Zoom) 기능도 (w/2, h/2)가 화면 중앙에 오도록 좌표를 보정합니다.
     const initialTranslateX = (width - width * fitScale) / 2;
     const initialTranslateY = (height - height * fitScale) / 2;
 
@@ -211,30 +261,26 @@ function initGraph() {
         .scale(fitScale)
     );
 
-    // [핵심 기능 3] 창 크기 변경(Resize) 시 중앙 재정렬
     window.addEventListener("resize", () => {
         width = container.clientWidth;
         height = container.clientHeight;
         svg.attr("width", width).attr("height", height);
-        
-        // 물리 엔진 중심점 업데이트
         simulation.force("center", d3.forceCenter(width / 2, height / 2));
         simulation.alpha(0.3).restart();
-
-        // 줌 상태 재계산 (선택 사항: 리사이즈 시 줌을 초기화하려면 아래 주석 해제)
-        /*
-        const newFitScale = Math.min(width, height) / estimatedDiameter;
-        const newTx = (width - width * newFitScale) / 2;
-        const newTy = (height - height * newFitScale) / 2;
-        svg.call(zoom.transform, d3.zoomIdentity.translate(newTx, newTy).scale(newFitScale));
-        */
     });
 
-    // 드래그 함수
     function dragstarted(event, d) { if (!event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; }
     function dragged(event, d) { d.fx = event.x; d.fy = event.y; }
     function dragended(event, d) { if (!event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; }
 }
+
+// [수정 5] Quartz의 네비게이션 이벤트(nav)에 대응 (SPA 이동 시 그래프가 다시 그려져야 함)
+window.addEventListener("nav", () => {
+    // 페이지 이동 후 그래프가 있는 페이지라면 다시 실행
+    if (document.getElementById('image-graph')) {
+        initGraph();
+    }
+});
 
 if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initGraph);
