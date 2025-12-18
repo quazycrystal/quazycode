@@ -28,3 +28,25 @@
     font-weight: 700;
   }
 }
+
+// quartz/styles/custom.scss
+
+body {
+  // 긴 단어가 화면을 넘어갈 경우 강제로 줄바꿈
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+// 코드 블록이 모바일에서 가로로 너무 길어질 때 방지
+pre {
+  white-space: pre-wrap;       /* 줄바꿈 허용 */
+  word-break: break-all;
+  overflow-x: auto;            /* 그럼에도 길면 스크롤 생성 */
+}
+
+// 이미지나 표가 화면 폭을 넘지 않도록 제한
+img, table {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}

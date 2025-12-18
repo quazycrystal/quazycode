@@ -162,8 +162,8 @@ function initGraph() {
     normalNodes.append("text").attr("class", "node-text")
         .text(d => d.title.length > 10 ? d.title.substring(0, 10) + "..." : d.title)
         .attr("dy", d => (d.size / 2) + (d.size / 5))
-        .attr("text-anchor", "middle").style("font-size", "14px").style("fill","#55bbffff")
-        .style("stroke", "#161618").style("stroke-width", "5px").style("paint-order", "stroke");
+        .attr("text-anchor", "middle").style("font-size", "12px").style("fill","#55bbffff")
+        .style("stroke", "#161618").style("stroke-width", "3px").style("paint-order", "stroke").style("stroke-linejoin", "round");
 
     // 강조 노드 (Image Card)
     const highNodes = node.filter(d => highlightIds.has(d.id));
@@ -185,8 +185,8 @@ function initGraph() {
     highNodes.append("text").attr("class", "node-text")
         .text(d => d.title.length > 10 ? d.title.substring(0, 10) + "..." : d.title)
         .attr("dy", d => (d.size / 2) + 21).attr("text-anchor", "middle")
-        .style("font-size", "14px").style("fill", "#ebebec").style("font-weight", "bold")
-        .style("stroke", "#161618").style("stroke-width", "5px").style("paint-order", "stroke");
+        .style("font-size", "12px").style("fill", "#ebebec").style("font-weight", "bold")
+        .style("stroke", "#161618").style("stroke-width", "3px").style("paint-order", "stroke").style("stroke-linejoin", "round");
 
     simulation.on("tick", () => {
         link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
