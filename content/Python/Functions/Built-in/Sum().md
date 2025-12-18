@@ -1,0 +1,1 @@
+[Python - sum()으로 리스트의 합계 계산](https://codechacha.com/ko/python-sum/)
