@@ -20,7 +20,7 @@
 
 /* Page Title (좌측 상단 웹사이트 제목) 폰트 강제 변경 */
 .page-title {
-  font-size: 1.75rem !important; /* !important는 강제 적용입니다 */
+  font-size: clamp(1.2rem, 5vw, 1.75rem) !important;
   font-family: "Greca", sans-serif !important; 
   
   /* 링크 색상이나 스타일도 여기서 바꿀 수 있습니다 */
