@@ -1,1 +1,1 @@
-[[Exhaustive]] [[Greedy]] [[Sort]]
+[[Exhaustive]] [[Greedy]] [[Sorting]] [[Searching]]

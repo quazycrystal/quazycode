@@ -1,1 +1,0 @@
-[[4834_숫자카드]]: list, tuple, enumerate(), key
