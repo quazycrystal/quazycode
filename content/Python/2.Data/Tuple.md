@@ -1,0 +1,1 @@
+[파이썬 12. 파이썬 입문(튜플과 리스트, 튜플의 수정/반복/할당/개수) : 네이버 블로그](https://blog.naver.com/PostView.naver?blogId=keyoung0621&logNo=222751632755)
