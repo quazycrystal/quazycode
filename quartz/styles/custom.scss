@@ -50,3 +50,24 @@ img, table {
   height: auto;
   display: block;
 }
+
+// 일반 본문 텍스트에서 엔터(줄바꿈)를 그대로 반영
+.popover-hint, .article-title, .content {
+  p {
+    white-space: pre-wrap !important; // 연속된 공백과 줄바꿈을 그대로 표시
+  }
+}
+
+// 코드 블록 내부의 자동 줄바꿈 강제 해제
+code, pre {
+  white-space: pre !important;       // 모든 공백과 줄바꿈을 타이핑한 그대로 유지
+  overflow-x: auto !important;       // 가로로 길어지면 자동으로 스크롤바 생성
+  word-wrap: normal !important;      // 단어 단위 강제 줄바꿈 해제
+  word-break: normal !important;     // 단어 쪼개기 방지
+}
+
+// 만약 코드 블록이 너무 좁게 느껴진다면 너비를 100%로 보장
+.prose pre {
+  width: 100%;
+  max-width: 100%;
+}

@@ -77,7 +77,7 @@ function initGraph() {
     n.color = colorScale(deg)
 
     if (n.id === "index" || n.isExternal === true || n.type === "external") {
-      n.size = 50
+      n.size = 75
       n.color = "#ffffff" 
     }
   })
@@ -89,17 +89,46 @@ function initGraph() {
   let fitScale = Math.min(width, height) / estimatedDiameter;
   fitScale = Math.max(0.2, Math.min(0.8, fitScale)); // 최대 배율을 0.8로 제한하여 여백 확보
 
-  // 6. 물리 시뮬레이션 - 노드 간 거리 좁힘
+  // 6. 물리 시뮬레이션 - 전체 밸런스 조정 버전
   const simulation = d3.forceSimulation(filteredNodes)
-    .force("link", d3.forceLink(links).id((d) => d.id).distance(isMobile() ? 40 : 60))
-    .force("charge", d3.forceManyBody().strength(isMobile() ? -120 : -180))
-    .force("collide", d3.forceCollide().radius((d) => d.size / 2 + 20))
-    .force("center", d3.forceCenter(width / 2, height / 2))
-
     // [추가] X축 힘: 모바일일 때 강하게 중앙으로 모아 세로로 길어지게 함
-    //.force("x", d3.forceX(width / 2).strength(isMobile() ? 0.1 : 0.03))
+    .force("x", d3.forceX(width / 2).strength(isMobile() ? 0.15 : 0.05))
     // [추가] Y축 힘: 데탑일 때 강하게 중앙으로 모아 가로로 넓어지게 함
-    //.force("y", d3.forceY(height / 2).strength(isMobile() ? 0.03 : 0.1))
+    .force("y", d3.forceY(height / 2).strength(isMobile() ? 0.05 : 0.15))
+
+    // 1. 반발력: 노드들이 서로 밀어내는 힘 (너무 세면 다 날아갑니다)
+    .force("charge", d3.forceManyBody().strength(isMobile() ? -200 : -300))
+    
+    // 2. 충돌 방지: 노드의 실제 부피를 결정 (padding을 20에서 10으로 줄여 촘촘함을 유도)
+    .force("collide", d3.forceCollide().radius((d) => (d.size / 2) + 20))
+    
+    // 3. 중심점: 그래프가 화면 중앙에 머물게 함
+    .force("center", d3.forceCenter(width / 2, height / 2))
+    
+    // 4. 링크 거리: 핵심 조절부
+    .force("link", d3.forceLink(links)
+      .id((d) => d.id)
+      .distance(d => {
+        const isSpecial = (node) => 
+          node.id === "index" || 
+          node.isExternal === true || 
+          node.type === "external";
+
+        const s = d.source;
+        const t = d.target;
+
+        // 특별 노드와 연결된 경우: 충돌 반경(약 100)보다 훨씬 크게 설정해서 멀리 보냄
+        if (isSpecial(t)|| isSpecial(s)) {
+          return isMobile() ? 160 : 240; 
+        }
+        
+        // 일반 노드끼리 연결된 경우: 충돌 반경(약 60~80)과 비슷하게 설정해서 촘촘하게 만듦
+        return isMobile() ? 40 : 60; 
+      })
+      // 거리를 지키려는 힘의 세기 (0~1 사이, 1에 가까울수록 엄격하게 거리를 지킵니다)
+      .strength(1)
+    )
+    
 
   // 7. 렌더링
   const highlightIds = new Set(["index", "Portfolio"])

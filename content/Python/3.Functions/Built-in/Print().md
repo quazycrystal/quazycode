@@ -51,7 +51,7 @@ temp_list = [list_a[j]]
 ### - List의 내용 한 줄로 출력
 [[python] 리스트 내용 출력하기 (list print) — Maybe seondays](https://seondays.tistory.com/30)
 그냥 for문하고 end 문자 쓰기
-삼성에서는 케이스 번호도 써야하니까 for문 대신 .join
+삼성에서는 케이스 번호도 써야하니까 for문 대신 .join [[String]]
 
 ### `print` 함수의 인자로 분리하기 (가장 추천)
 

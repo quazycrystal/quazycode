@@ -3,5 +3,5 @@
 - **내용:** 숫자, 문자열, 리스트, 튜플, 딕셔너리, 세트의 특성, 변수
 ### -Data type (자료형)
 ![[Data_types.png]]
-[[_Non_iterables]], [[_Iterables]], [[Mutable]]  
+[[_Non_iterables]], [[_Iterables]],
 ### - Variables (변수)

@@ -9,7 +9,6 @@ slicing 가능
 
 
 iterable 쓴 함수는 generator
-[[Zip()]]
 ### - Iterable인지 알아보기
 isinstance(), iter() 함수 사용
 print(isinstance(li, Iterable))
