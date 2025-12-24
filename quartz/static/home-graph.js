@@ -91,11 +91,21 @@ function initGraph() {
 
   // 6. 물리 시뮬레이션 - 전체 밸런스 조정 버전
   const simulation = d3.forceSimulation(filteredNodes)
-    // [추가] X축 힘: 모바일일 때 강하게 중앙으로 모아 세로로 길어지게 함
-    .force("x", d3.forceX(width / 2).strength(isMobile() ? 0.15 : 0.05))
-    // [추가] Y축 힘: 데탑일 때 강하게 중앙으로 모아 가로로 넓어지게 함
-    .force("y", d3.forceY(height / 2).strength(isMobile() ? 0.05 : 0.15))
+    // [추가] X축 힘: 데스크탑에서 특수 노드를 왼쪽(0.15)으로, 일반 노드를 오른쪽(0.85)으로 당김
+  .force("x", d3.forceX(d => {
+    const isSpecial = (node) => node.id === "index" || node.isExternal || node.type === "external";
+    
+    if (isMobile()) return width / 2; // 모바일은 가로 중앙 유지
+    return isSpecial(d) ? width * 0.15 : width * 0.85; 
+  }).strength(isMobile() ? 0.05 : 0.15))
 
+  // [추가] Y축 힘: 모바일에서 특수 노드를 위쪽(0.15)으로, 일반 노드를 아래쪽(0.85)으로 당김
+  .force("y", d3.forceY(d => {
+    const isSpecial = (node) => node.id === "index" || node.isExternal || node.type === "external";
+    
+    if (isMobile()) return isSpecial(d) ? height * 0.15 : height * 0.85;
+    return height / 2; // 데스크탑은 세로 중앙 유지
+  }).strength(isMobile() ? 0.15 : 0.05))
     // 1. 반발력: 노드들이 서로 밀어내는 힘 (너무 세면 다 날아갑니다)
     .force("charge", d3.forceManyBody().strength(isMobile() ? -200 : -300))
     
