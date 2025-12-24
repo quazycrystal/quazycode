@@ -1,4 +1,4 @@
-## [[Iterable]] 중 순서 있는 것: [[List]], [[Tuple]], [[String]], [[Range]]
+## [[_Iterables]] 중 순서 있는 것: [[List]], [[Tuple]], [[String]], [[Range]], [[Bytes]]
 
 |**기능**|**종류**|**예시**|
 |---|---|---|

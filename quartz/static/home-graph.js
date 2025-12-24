@@ -92,9 +92,14 @@ function initGraph() {
   // 6. 물리 시뮬레이션 - 노드 간 거리 좁힘
   const simulation = d3.forceSimulation(filteredNodes)
     .force("link", d3.forceLink(links).id((d) => d.id).distance(isMobile() ? 40 : 60))
-    .force("charge", d3.forceManyBody().strength(isMobile() ? -100 : -150))
-    .force("collide", d3.forceCollide().radius((d) => d.size / 2 + 10))
+    .force("charge", d3.forceManyBody().strength(isMobile() ? -120 : -180))
+    .force("collide", d3.forceCollide().radius((d) => d.size / 2 + 20))
     .force("center", d3.forceCenter(width / 2, height / 2))
+
+    // [추가] X축 힘: 모바일일 때 강하게 중앙으로 모아 세로로 길어지게 함
+    //.force("x", d3.forceX(width / 2).strength(isMobile() ? 0.1 : 0.03))
+    // [추가] Y축 힘: 데탑일 때 강하게 중앙으로 모아 가로로 넓어지게 함
+    //.force("y", d3.forceY(height / 2).strength(isMobile() ? 0.03 : 0.1))
 
   // 7. 렌더링
   const highlightIds = new Set(["index", "Portfolio"])
@@ -133,7 +138,8 @@ function initGraph() {
 
   normalNodes.append("text")
     .attr("class", "node-text")
-    .text((d) => (d.title.length > 10 ? d.title.substring(0, 10) + "..." : d.title))
+    .text((d) => d.title)
+    //.text((d) => (d.title.length > 10 ? d.title.substring(0, 10) + "..." : d.title))
     .attr("dy", (d) => (d.size / 2) + 12)
     .attr("text-anchor", "middle")
     .style("font-size", "11px").style("fill", (d) => d.color)
@@ -156,7 +162,8 @@ function initGraph() {
     .on("error", function () { d3.select(this).style("display", "none") })
 
   highNodes.append("text").attr("class", "node-text")
-    .text((d) => (d.title.length > 10 ? d.title.substring(0, 10) + "..." : d.title))
+    .text((d) => d.title)
+    //.text((d) => (d.title.length > 10 ? d.title.substring(0, 10) + "..." : d.title))
     .attr("dy", (d) => d.size / 2 + 21).attr("text-anchor", "middle")
     .style("font-size", "12px").style("fill", "#ebebec").style("font-weight", "bold")
     .style("stroke", "#161618").style("stroke-width", "3px").style("paint-order", "stroke")

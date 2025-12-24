@@ -1,4 +1,4 @@
-## Mutable [[Sequence]] (가변 시퀀스)
+## Mutable [[_Sequence]] (가변 시퀀스)
 Iterable - Sequence 중에서도 내용 편집 가능한 것  
 2차원 이상 List는 [[Array]]에 서술  
 ##### 수정까지 가능해야 쓸 수 있는 추가, 삭제, 변형, 복사 등의 기능  
@@ -57,63 +57,45 @@ print(fruits) #fruits[1] 사라짐
 존재하지 않는 값을 검색하는 경우 ValueError 발생
 
 *** 
-### `pop()`: 맨 뒤의 값을 삭제. 인자를 지정할 경우 특정 위치의 값을 삭제[#](https://www.lainyzine.com/ko/article/how-to-delete-elements-of-a-list-in-python/#table-of-contents)
+### - 맨 나중 값 빼서 반환: `.pop()`
+스택의 pop, push 개념과 유사, 맨 마지막 요소 뾱 빼서 돌려줌  
+##### 인자 지정 후 특정 인덱스에도 적용 가능  
+일반 인덱스 다루는 것과 같음  
+마지막 값을 지정하고자 하는 경우 음수 -1  
+`pop()` 메서드의 기본적인 원리상 ==중간에 있는 값을 지정할 경우 시간 복잡도가 O(n)==  
+get이나 이런거는 복잡도 O(1)이니까 중간 거 뽑으려면 .pop()이 그닥  
+[list 함수별 시간 복잡도](https://wiki.python.org/moin/TimeComplexity)  
 
-스택의 pop, push 개념을 알고있다면, 리스트의 `pop()` 메서드도 쉽게 이해할 수 있습니다. `pop()` 메서드는 리스트의 마지막 요소를 삭제합니다. 단순히 삭제만 하는 것은 아니고, 이 마지막 값을 반환해줍니다.
-
-```
+```python
 primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
-print(primes.pop())
-# => 29
-```
-
-인자를 지정할 경우 특정 인덱스의 값을 삭제하고 반환받을 수 있습니다. 이 때 첫 번째 값의 인덱스는 0이며, 마지막 값을 지정하고자 하는 경우 음수 -1을 지정할 수 있습니다. 단, 존재하지 않는 인덱스를 지정할 경우 IndexError 에러가 발생합니다.
-
-```
 >>> print(primes.pop(0))
 2
 >>> print(primes.pop(-1))
 19
 
 >>> print(primes.pop(10))
----------------------------------------------------------------------------
-IndexError                                Traceback (most recent call last)
-Input In [69], in <cell line: 1>()
-----> 1 print(primes.pop(10))
+IndexError: pop index out of range 
 
-IndexError: pop index out of range
 ```
-
-단, `pop()` 메서드의 기본적인 원리상 중간에 있는 값을 지정할 경우 [시간 복잡도가 O(n)이므로 주의가 필요합니다](https://wiki.python.org/moin/TimeComplexity).
-
 
 ## 순서 변형
 [[Python] sort(reverse=True), reverse() 차이](https://m.blog.naver.com/wideeyed/221745432175)
 ### - 오름차순/내림차순 정렬: `.sort() (key=..., reverse=...)`
 문법: 리스트 이름.sort(), 리스트 이름.sort(reverse=True)  
-
 ==아예 원본이 바뀜== -> 순서 있고 바꿀 수 있는 list 전용  
-새로운 변수에 저장하려면: `new_list = sorted(my_list))`  
+새로운 변수에 저장하려면: [[Sorted()]]`new_list = sorted(my_list))`  
 
 ***
 ### - 그냥 원본 뒤집기: `.reverse()`
 문법: 리스트 이름.reverse()  
 ==아예 원본이 바뀜== -> 순서 있고 바꿀 수 있는 list 전용  
 ==내림차순 아님!!!==  
-새로운 변수에 저장하려면: `new_list = list(reversed(my_list))`  
+새로운 변수에 저장하려면: [[Reversed()]]`new_list = list(reversed(my_list))`  
 
-## 복사 (원본 보존용)
-불변 객체(튜플, 문자열)는 값이 안 변하니 복사본이 굳이 필요 없지만, 리스트는 원본 보호를 위해 복사 기능이 중요
-
-- **`.copy()`**: 리스트의 **얕은 복사(Shallow Copy)**본을 만듭니다. (`list[:]`와 같은 역할)
-### - 동일한 길이의 리스트 쌍으로 묶기
-dictionary도 있지만 zip()으로 
-[[Zip()]]
-
-
-
-
-
-
-
-
+## 복사
+[[python] 파이썬 얕은 복사, 깊은 복사 (copy, deepcopy, [:], =) 총 정리](https://blockdmask.tistory.com/576)
+불변 객체는 값이 변하면 주소도 무조건 바뀌지만 ==가변 객체 (List, Dictionary, Set)==는 주소는 그대로 두고 값을 바꿀 수가 있음
+### - 얕게 복사: `.copy(), [:]`
+이름은 다른데 주소는 같음. 결국 같은 거, 하나 바꾸면 나머지도 바뀜
+### - 깊게 복사: `.deepcopy()`
+이름도 다르고 주소 다름. 아예 빼 놓기
