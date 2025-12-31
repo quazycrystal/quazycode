@@ -1,8 +1,8 @@
 #List  
-### - 여러 줄 int list로 잘 받기
+- 여러 줄 int list로 잘 받기
 list(map(int, input().split()))
 
-### -  쓸모 없는 input은 저장 안 하고 실행만 시켜서 날리기
+-  쓸모 없는 input은 저장 안 하고 실행만 시켜서 날리기
 input()에 변수 지정 안 하기
 
 ***

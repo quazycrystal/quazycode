@@ -1,50 +1,130 @@
 [파이썬 문자열 불변성 immutable 개념과 메모리 모델 총정리 - Y Information](https://yinternational.co.kr/%ED%8C%8C%EC%9D%B4%EC%8D%AC-%EB%AC%B8%EC%9E%90%EC%97%B4-%EB%B6%88%EB%B3%80%EC%84%B1-immutable-%EA%B0%9C%EB%85%90%EA%B3%BC-%EB%A9%94%EB%AA%A8%EB%A6%AC-%EB%AA%A8%EB%8D%B8-%EC%B4%9D%EC%A0%95%EB%A6%AC/)
+[파이썬 repr() 함수 - str()과의 차이점 : 네이버 블로그](https://blog.naver.com/PostView.nhn?blogId=youndok&logNo=222068498186)
+[[PYTHON] 문자열(String) 완벽 가이드 : 기초부터 고급 활용까지](https://devhandbook.tistory.com/entry/PYTHON-%EB%AC%B8%EC%9E%90%EC%97%B4String-%EC%99%84%EB%B2%BD-%EA%B0%80%EC%9D%B4%EB%93%9C-%EA%B8%B0%EC%B4%88%EB%B6%80%ED%84%B0-%EA%B3%A0%EA%B8%89-%ED%99%9C%EC%9A%A9%EA%B9%8C%EC%A7%80)
+[R, Python 분석과 프로그래밍의 친구 (by R Friend) :: [Python] 파이썬 문자열 처리를 위한 다양한 메소드 (Python string methods)](https://rfriend.tistory.com/327)
+
 Sequence이지만 불변 (tuple처럼)
-### - 리스트끼리 묶어서 문자열로: `join()`:맨 뒤의 값을 삭제. 인자를 지정할 경우 특정 위치의 값을 삭제[#](https://www.lainyzine.com/ko/article/how-to-delete-elements-of-a-list-in-python/#table-of-content
-iterable
-### 💡 한 걸음 더: 리스트 전체를 쉼표로 연결하고 싶다면?
+Sequence이므로 인덱싱, 슬라이싱 등 순서 관련 기능 가능
+불변 자료형이므로 원칙적으로는 추가, 삭제, 변형, 복사 불가. 저런 기능들이 가능해 보이는 것은 새로운 문자열 만들기 때문
 
-만약 리스트에 들어있는 모든 숫자를 `1, 2, 3` 처럼 예쁘게 합쳐서 보고 싶다면 파이썬의 `join`이라는 아주 유용한 기능을 사용합니다. (이건 나중에 더 익숙해지면 써보세요!)
+Python에서는 UFT-8 인코딩 -> len()함수 주의 유니코드는 문자 하나당으로 길이 셈
+```python
+print(len(str(123))) # 3
 
-Python
+print(len(str(3.14))) # 4 (소수점도 한 글자)
 
+print(len("hello world")) # 11 (영어도 한 글자씩 셈)
+
+print(len("아이 배부르다")) # 7 (한글도 한 글자씩 셈)
+
+print(len(" ")) #1 (공백도 길이 1)
+
+# 한글과 영어 byte 수 다른데 유니코드로 하면 메모리가 아니라 글자 수만 보므로 같음
+
+# ASCII는 아예 한글을 표현 못함
+
+  
+
+text_en = "hello"
+
+text_ko = "안녕하세요"
+
+  
+
+# 1. 글자 수 확인 (len)
+
+print(len(text_en)) # 5
+
+print(len(text_ko)) # 5 -> 유니코드 기반이므로 글자 수는 동일하게 5
+
+  
+
+# 2. 바이트 수 확인 (UTF-8 인코딩 시)
+
+print(len(text_en.encode('utf-8'))) # 5 (영어는 글자당 1바이트)
+
+print(len(text_ko.encode('utf-8'))) # 15 (한글은 글자당 3바이트)
 ```
+
+
+주요 메소드
+### - 리스트끼리 묶어서 문자열로: `join()`
+문법: 새로운 변수 = "구분자".join(iterable)
+
+``` python
 # 리스트 [1, 2, 3]을 "1, 2, 3" 문자열로 만들기
-result = ", ".join(map(str, list_a))
+
+full_list = [1, 2, 3]
+result = ", ".join(map(str, full_list))
 print(result)
-```
-
-**결론:** `end=`은 오직 `print(...)` 괄호 안에서만 쓸 수 있다는 점만 기억하시면 됩니다!
-
-혹시 지금 **"리스트의 값들을 한 줄로 쭉 출력하고 싶어서"** 저 코드를 작성하셨던 건가요? 그렇다면 방금 작성하신 전체 코드를 보여주시면 가장 적합한 출력 방식을 알려드릴게요. Would you like me to check your output logic?
 
 
+#리스트 [1, 2, 3]을 "123" 문자열로 만들기
 
-### 2. `.join()`은 어디에 '적용'할 수 있나요?
-
-메서드는 문자열의 것이지만, 그 안에 **재료(Argument)**로 들어갈 수 있는 것들은 모든 **Iterable(반복 가능한 객체)**입니다.
-
-사용자님이 정리하신 **Iterable** 자료형들이라면 다 받아줄 수 있어요:
+result = "".j```
 
 - **리스트 (List):** `"-".join(["A", "B"])` (가장 많이 씀)
-    
 - **튜플 (Tuple):** `"-".join(("A", "B"))` (당연히 가능)
-    
 - **세트 (Set):** `"-".join({"A", "B"})` (가능하지만 순서가 무작위)
-    
-- **딕셔너리 (Dict):** `"-".join({"A": 1, "B": 2})` (키(Key)값들을 합침)
-    
-
----
-
-### 3. 적용 시 '절대 조건' (Constraint)
-
-아무리 이터러블이라도 이 조건이 안 맞으면 에러가 납니다.
-
-> **"주머니 안에 든 알맹이들이 반드시 '문자열(str)' 타입이어야 한다."**
+- **딕셔너리 (Dict):** `"-".join({"A": 1, "B": 2})` (키(Key)값들을 합침) .
+==단 주머니 안에 든 알맹이들이 반드시 '문자열(str)' 타입 이어야==
 
 - **성공:** `"".join(["1", "2", "3"])` (문자열 리스트)
-    
 - **실패:** `"".join([1, 2, 3])` (숫자 리스트 → `TypeError` 발생)
 
 ***
+
+replace() 
+[Python - 문자열에서 특정 문자 바꾸기](https://codechacha.com/ko/python-replace-string-in-string/)
+split()
+isalpha()
+str()도 있지만 디버깅용 repr()도 있음
+
+같은 문자가 있으면 앞에서 돌리는지 뒤에서 돌리는지가 차이나겠다
+### find(): 
+문자열에 매개변수로 입력한 문자열이 있는지를 앞에서 부터 찾아 index 반환, 없으면 '-1' 반환
+### rfind() 
+문자열에 매개변수로 입력한 문자열이 있는지를 뒤에서 부터 찾아 index 반환, 없으면 '-1' 반환
+```python
+# find() : Search forwards, Determine if str occurs in string and return the index
+
+>>> a = 'I Love Python'
+
+>>> a.find('o')
+
+3
+# rfind() : Same as find(), but search _backwards_ in string
+
+>>> a = 'I Love Python'
+
+
+```
+
+**index() :  find()와 기능 동일하나, 매개변수로 입력한 문자열이 없으면 ValueError 발생**
+**rindex() : index()와 기능 동일하나, 뒤에서 부터 매개변수의 문자열이 있는지를 찾음**
+
+```python
+# index(): Same as find(), but raises an exception if str not found
+
+>>> a = 'I Love Python'
+
+>>> a.index('o')
+
+3
+
+>>> a.index('k') # ValueError: substring not found
+
+Traceback (most recent call last):
+
+# rindex(): Same as index(), but search backwards in string
+
+>>> a = 'I Love Python'
+
+>>> a.rindex('o')
+
+11
+
+>>> a.rindex('k') # ValueError: substring not found
+
+Traceback (most recent call last):
+```

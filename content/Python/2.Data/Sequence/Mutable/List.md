@@ -1,8 +1,7 @@
 ## Mutable [[_Sequence]] (가변 시퀀스)
 Iterable - Sequence 중에서도 내용 편집 가능한 것
 2차원 이상 List는 [[Array]]에 서술
-##### 수정까지 가능해야 쓸 수 있는 추가, 삭제, 변형, 복사 등의 기능  
-'.' 있는 메소드 - 변수 정의 필요 없는 명령문
+##### 수정까지 가능해야 쓸 수 있는 추가, 삭제, 변형, 복사 등의 메소드 존재  
 
 ## 요소 추가
 [Python - 리스트 추가 (append, insert, extend)](https://codechacha.com/ko/python-list-append-insert-extend/)
