@@ -5,3 +5,6 @@
 ![[Data_types.png]]
 [[_Non_iterables]], [[_Iterables]],
 ### - Variables (변수)
+### - User-defined 
+사용자가 만드는 자료구조
+[[Queue]] [[Stack]]

@@ -47,4 +47,4 @@ ex) "4836_색칠하기"
 - 엣지 케이스 유의 -> 충전소 거리 n 자체가 충전 없이 갈 수 있는 거리보다 길면 아예 실패.
   -> 동적계획법: 큰 문제를 잘게잘게 쪼개고, 같은 계산 더 안 하게 미리 저장  
 
-[[Exhaustive]] [[Greedy]] [[Sorting]] [[Searching]] [[Subset]] [[Regression]]
+[[Exhaustive]] [[Greedy]] [[Sorting]] [[Searching]] [[Regression]] [[Pattern]] [[DFS]]

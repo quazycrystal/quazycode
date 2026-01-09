@@ -1,3 +1,4 @@
+[[Class]]
 - **함수 (Function):** 혼자서도 잘 노는 애들 (`print()`, `len()`, `sorted()`)
     
 - **메서드 (Method):** 특정 객체(리스트, 문자열 등)에 소속되어 있는 함수 (`list.sort()`, `str.split()`)

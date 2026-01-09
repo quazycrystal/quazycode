@@ -1,4 +1,9 @@
-#List  
+---
+Status: true
+tags:
+  - List
+---
+
 - 여러 줄 int list로 잘 받기
 list(map(int, input().split()))
 
