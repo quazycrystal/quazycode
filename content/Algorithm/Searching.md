@@ -80,15 +80,6 @@ Middle 식 둘 다 start와 end사이 값을 구한다는 것은 같지만 원�
  원래 식: start+((end-start)//2) -> start 값 위에 end-start//2값이 더해짐
  문제: start+end//2 -> start와 end 다 더하고 //2
 ```python
-
-
-
-
-
-
-
-
-
 def Binary(arr, key): #데이터, 찾으려는 값
 start = 0
 end = len(arr) - 1 # end값도 탐색 범위 포함이므로 index처럼 하나 빼줘야
@@ -122,3 +113,6 @@ def Binary2(arr, start, end, key):
 			return Binary2(arr, start, (middle - 1), key)
 
 ```
+
+
+[[DFS]]

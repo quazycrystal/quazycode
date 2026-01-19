@@ -63,3 +63,5 @@ Python
 # 결과: #1 1 2 3 4 5
 print(f'#{test_case}', *sorted_list)
 ```
+
+split()

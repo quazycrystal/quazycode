@@ -1,7 +1,5 @@
 [1. Introduction to Algorithms](https://www.youtube.com/watch?v=0IAPZzGSbME&list=PLDN4rrl48XKpZkf03iYFl-O29szjTrs_O)
 
-
-
 1. **Input:** 어떤 모양의 데이터가 들어오는가?
 2. **Storage:** 그 데이터를 어떤 형태로 저장할 것인가? (예: 2차원 리스트)
 3. **Process:** 저장된 데이터를 어떻게 요리할 것인가? (1. 다 칠하기 -> 2. 전체 순회하며 찾기)

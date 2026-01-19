@@ -19,6 +19,7 @@ a.append(3) #-> O
 문법: 리스트 이름.insert(값)
 괄호 안의 요소들을 풀어서 각각 추가.
 ex) `a.extend((1,2))`하면 1, 2 각각 추가. split(), list()처럼
+DFS할 때, To_do stack 만들 때 다음 방문 노드를 풀어서 리스트 뒤에 저장 (이중으로 list 안 생기게)
 
 ***
 ##### - 중간에 새치기: 리스트 이름 `.insert(i, x)`
@@ -62,7 +63,7 @@ print(fruits) #fruits[1] 사라짐
 일반 인덱스 다루는 것과 같음
 마지막 값을 지정하고자 하는 경우 음수 -1
 `pop()` 메서드의 기본적인 원리상 ==중간에 있는 값을 지정할 경우 시간 복잡도가 O(n)==
-get이나 이런거는 복잡도 O(1)이니까 중간 거 뽑으려면 .pop()이 그닥
+-> get이나 이런거는 복잡도 O(1)이니까 중간 거 뽑으려면 .pop()이 그닥
 (list에서 get과 같은 건 `list 이름[index]`)
 [list 함수별 시간 복잡도](https://wiki.python.org/moin/TimeComplexity)
 

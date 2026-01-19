@@ -75,4 +75,21 @@ print(others) # [3, 4, 5]
    for i in range n:
        full_list[i] = list(map(int, input().split()))
    ```
-   
+
+***
+### - 숫자와 문자 분리: `isdigit()` 
+[[python] isdigit, isnumeric, isdecimal, isalpha, isalnum 함수로 문자 숫자 확인하기](https://sikmulation.tistory.com/83)
+x.isdigit() 처럼 씀, 괄호 안에는 아무것도 안 들어감
+```python
+data = "apple 10 banana 20 30 cherry"
+
+# 숫자인 것만 리스트에 담기
+numbers = [int(x) for x in data.split() if x.isdigit()]
+
+print(numbers)  # [10, 20, 30]
+```
+***
+
+### - 입력 자료형 종류 보기
+[[python] 파이썬 isinstance 타입 확인 함수 설명과 예제](https://blockdmask.tistory.com/536)
+if isinstance(formula[i], int):-> True, False 내보냄
