@@ -1,1 +1,0 @@
-[[초급] 파이썬 연산자/ 산술 연산자 (+, -, *, /, //, %, **)](https://code-lab.tistory.com/entry/%EC%B4%88%EA%B8%89-%ED%8C%8C%EC%9D%B4%EC%8D%AC-%EC%97%B0%EC%82%B0%EC%9E%90-%EC%82%B0%EC%88%A0-%EC%97%B0%EC%82%B0%EC%9E%90)

@@ -1,0 +1,1 @@
+[[파이썬][자료구조] 데크(deque)에 대한 모든 것 (정의, 함수, 활용) :: 깨작코딩](https://siloam72761.tistory.com/entry/%ED%8C%8C%EC%9D%B4%EC%8D%AC%EC%9E%90%EB%A3%8C%EA%B5%AC%EC%A1%B0-%EB%8D%B0%ED%81%ACdeque%EC%97%90-%EB%8C%80%ED%95%9C-%EB%AA%A8%EB%93%A0-%EA%B2%83-%EC%A0%95%EC%9D%98-%ED%95%A8%EC%88%98-%ED%99%9C%EC%9A%A9)
