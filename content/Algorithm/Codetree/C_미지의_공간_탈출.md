@@ -4,19 +4,21 @@ data_structure: [2차원 배열, 3차원 배열, 덱]
 technique: [룩업 테이블, 배열 회전, 상대 좌표]
 ---
 
-### 걸린 시간: - (실패 횟수: 시간 내 못 품 (2시간 더 들여서 해결))
+### 걸린 시간: 6시간 내외 (실패 횟수: 시간 내 못 품 (2시간 더 들여서 해결))
 
 ### 실패 / 성공 이유
-- [방문 처리] v 배열로는 면 사이 이동이 안 되고 탐색 순서에 따라 달라짐
+- [방문 처리] 단순 v 배열로는 면 사이 이동이 안 되고 탐색 순서에 따라 달라짐 (포털을 만들어야 함)
 - [인덱스] 면 회전과 r, c 변환이 꼬임
 
 ### 코드 개선 방법
-- [룩업 테이블] 바닥은 시간 이상현상 확산 시간 테이블을 만들고, 도착 시간이 그보다 크면 못 감
+- [룩업 테이블] 바닥은 굳이 다 가보지 않아도 된다 - bfs 여러 번 돌렸는데 안 그래도 됨
+  시간 이상 현상 확산 시간 테이블을 만들고, 도착 시간이 그보다 크면 못 감
 - [좌표 변환] 면별로 회전(동 270, 서 90, 북 180)해 펼치고 좌표 변환 함수로 연결
 - [디버깅] 숫자를 만들어 빨리 찍기
 
 ### 코드
 ```python
+
 from collections import deque
 
 
@@ -81,7 +83,7 @@ def change_jwa(r, c):
     elif sec - 1 <= r <= thr - 1 and sec - 1 <= c <= thr - 1:
         nr, nc = c, r
 
-    if r == fir or r == sec - 1:
+    elif r == fir or r == sec - 1:
         if r == fir:
             nc = sec - 1
             nr = thr - 1 - c
@@ -89,7 +91,7 @@ def change_jwa(r, c):
             nc = fir
             nr = thr - 1 - c
 
-    if c == fir or c == sec - 1:
+    elif c == fir or c == sec - 1:
         if c == fir:
             nr = sec - 1
             nc = thr - 1 - r
@@ -271,5 +273,4 @@ else:
             prev_ans = pos_ans
 
         print(prev_ans)
-
 ```
