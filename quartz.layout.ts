@@ -1,6 +1,7 @@
 import { PageLayout, SharedLayout } from "./quartz/cfg"
 import * as Component from "./quartz/components"
 import HomeGraph from "./quartz/components/HomeGraph" // <--- 이 줄 추가
+import SidebarToggle from "./quartz/components/SidebarToggle"
 
 // components shared across all pages
 export const sharedPageComponents: SharedLayout = {
@@ -33,6 +34,7 @@ export const defaultContentPageLayout: PageLayout = {
   ],
 
   left: [
+    SidebarToggle(),
     Component.PageTitle(),
     Component.MobileOnly(Component.Spacer()),
     Component.Flex({
@@ -62,6 +64,7 @@ export const defaultListPageLayout: PageLayout = {
   ],
 
   left: [
+    SidebarToggle(),
     Component.PageTitle(),
     Component.MobileOnly(Component.Spacer()),
     Component.Flex({
