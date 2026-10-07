@@ -247,13 +247,14 @@ export default (() => {
             <a
               class="home-portfolio"
               href={portfolioUrl ?? `./${portfolio.slug}`}
-              {...(portfolioUrl ? { target: "_blank", rel: "noopener" } : {})}
+              // 포트폴리오·CV 는 블로그와 같은 도메인이라 Quartz SPA 가 가로채지 않게 data-router-ignore
+              {...(portfolioUrl ? { target: "_blank", rel: "noopener", "data-router-ignore": "" } : {})}
             >
               {portfolioImg && <img src={`./${portfolioImg}`} alt="" loading="lazy" />}
               <span>Art Portfolio</span>
             </a>
           )}
-          <a class="home-cv" href={CV_URL} target="_blank" rel="noopener">
+          <a class="home-cv" href={CV_URL} target="_blank" rel="noopener" data-router-ignore="">
             CV
           </a>
         </div>
