@@ -51,6 +51,15 @@ export default (() => {
             )}
           </>
         )}
+        {/* 한글 전용 글꼴. 쓰는 글자만 내려받는 dynamic subset. 적용은 styles/custom.scss
+            버전 고정 + integrity(SRI): 파일 내용이 바뀌면 브라우저가 적용하지 않음.
+            버전을 올리면 integrity 해시도 다시 계산해야 함 */}
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+          integrity="sha384-GIdEBaqGN9mNkDkMkzMHW8EKUqtpPIe/sLj1X7DIrnc9uPtLROJgmuDlh+3rBw0j"
+          crossOrigin="anonymous"
+        />
         <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossOrigin="anonymous" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 

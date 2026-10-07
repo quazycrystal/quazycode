@@ -71,3 +71,10 @@ code, pre {
   width: 100%;
   max-width: 100%;
 }
+// 한글만 Pretendard: Poppins·IBM Plex Mono 에는 한글이 없어서 한글 글자는 다음 순서인 Pretendard 로 표시됨
+// (Pretendard 는 Head.tsx 에서 불러옴. :root:root 는 테마 변수보다 우선하게 하려는 것)
+:root:root {
+  --headerFont: "Poppins", "Pretendard Variable", Pretendard, system-ui, sans-serif;
+  --bodyFont: "Poppins", "Pretendard Variable", Pretendard, system-ui, sans-serif;
+  --codeFont: "IBM Plex Mono", "Pretendard Variable", Pretendard, ui-monospace, monospace;
+}
