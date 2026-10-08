@@ -9,8 +9,10 @@ const MIN_TILE_SHARE = 0.04 // 타일 최소 넓이 (전체 문서 수 대비)
 const CV_URL = "https://quazycrystal.github.io/assets/img/JiwonKim_CV_25-11-14.pdf#toolbar=1"
 
 const PHI = 1.618
-const GAP = 10 // 기본 간격 단위(px). 타일 안쪽 여백은 GAP * PHI
-const TILE_GAP = 16 // 타일(블록) 사이 간격(px)
+const GAP = 10 // 기본 간격 단위(px)
+// 카드 사이 간격(px, 트리맵 기준 폭에서). 같은 상위 폴더끼리는 가깝게, 다른 상위 폴더와는 φ² 배 멀게
+const GAP_SAME = 8
+const GAP_OTHER = GAP_SAME * PHI * PHI
 
 // 색 규칙 (CLAUDE.md "홈 화면 디자인 규칙" 참고)
 // 허용 팔레트 안에서 채도 높고 밝은 색을 우선 쓰고, 같은 카테고리 안에서는 밝기(HSL L)만 조절함
@@ -19,24 +21,38 @@ const CATEGORY_COLORS: Record<string, string> = {
   Language: "#01EFAC",
   Backend: "#7AE582",
 }
-const FALLBACK_COLOR = "#004E64"
-const LIGHTNESS_STEP = 6 // 카테고리 안에서 큰 폴더 → 작은 폴더로 갈수록 밝기 +6%
+// 위에 없는 새 상위 폴더에는 아직 안 쓴 팔레트 색을 순서대로 배정 (서로 잘 구분되는 색부터)
+const AUTO_PALETTE = ["#524094", "#25A18E", "#2082A6", "#01CBAE", "#562A83", "#004E64", "#9FFFCB"]
+// 카테고리 안에서 큰 폴더 → 작은 폴더로 갈수록 밝기를 최대 +6%씩 올림.
+// 폴더가 많으면 밝기 상한(MAX_L)까지의 범위를 폴더 수로 나눠서 끝까지 구분되게 함
+const LIGHTNESS_STEP = 6
+const MAX_L = 85
+
+// 카드 투명감 (밝기와 투명도만 바꿈)
+// - 라이트 모드: 옅은 유리 틴트(LIGHT_TINT) + 같은 색을 아주 어둡게 한 글씨(밝기 INK_L%)
+// - 다크 모드: 원래 색을 DARK_ALPHA 로 반투명하게 + 흰 글씨
+const LIGHT_TINT = 0.45
+const INK_L = 20
+const DARK_ALPHA = 0.6
 
 // 레이아웃 단위 → 실제 px (글자 배치 계산용). 트리맵은 최대 폭(w × pxPerUnit)으로 고정. 가로형 2:1, 세로형 1:1.6
+// 카드가 BASE_TILES 개를 넘으면 그만큼 세로로 늘려서 카드 하나의 크기를 지킴
 const LAYOUTS = [
   { cls: "wide", w: 1000, h: 500, pxPerUnit: 0.7 },
   { cls: "tall", w: 600, h: 960, pxPerUnit: 0.57 },
 ]
+const BASE_TILES = 12
 
 // 위계 규칙 (CLAUDE.md "위계" 참고). 기준 = 본문 제목(h1) 28px, 한 단계 = ÷√φ (두 단계가 1:φ)
-// - 폴더 이름(오른쪽 아래, 볼드): 가장 큰 타일에서 28px
-// - 숫자(왼쪽 위, 보통): 가장 큰 타일에서 한 단계 작게 (22px)
+// - 폴더 이름(왼쪽 위, 볼드): 가장 큰 타일에서 28px
+// - 숫자(오른쪽 아래, 보통): 가장 큰 타일에서 한 단계 작게 (22px)
 // - 키워드: 한 단계 작게(22px) 시작해서 줄이 바뀔 때마다 한 단계씩 작아짐
 // 다른 타일은 가장 큰 타일 대비 (넓이 비율)^¼ 로 전체 글자를 함께 줄임
 const HEAD_PX = 28
 const STEP = Math.sqrt(PHI)
 const MIN_PX = 11
-const PAD = { lg: GAP * PHI, sm: GAP, xs: 0 }
+// 카드 안쪽 여백: 가장 큰 카드에서 GAP·φ·√φ(≈21px), 다른 카드는 글자와 같은 비율(scale)로 줄어듦
+const PAD_MAX = GAP * PHI * Math.sqrt(PHI)
 const MAX_LINES = 8
 
 const prettify = (s: string) => s.replace(/_/g, " ")
@@ -70,12 +86,17 @@ const hslToHex = (h: number, s: number, l: number) => {
 // 색상(H)과 채도(S)는 그대로 두고 밝기만 바꿈
 const adjustLightness = (hex: string, delta: number) => {
   const [h, s, l] = hexToHsl(hex)
-  return hslToHex(h, s, Math.min(85, Math.max(15, l + delta)))
+  return hslToHex(h, s, Math.min(MAX_L, Math.max(15, l + delta)))
 }
 
-const isLightColor = (hex: string) => {
-  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.4
+const withLightness = (hex: string, l: number) => {
+  const [h, s] = hexToHsl(hex)
+  return hslToHex(h, s, l)
+}
+
+const rgba = (hex: string, alpha: number) => {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
 // Poppins 기준 대략적인 글자 폭(em)
@@ -203,22 +224,35 @@ export default (() => {
       })
       .sort((a, b) => b.count - a.count)
 
-    const colorOf = (category: string) => CATEGORY_COLORS[category] ?? FALLBACK_COLOR
+    const categoryColor = new Map<string, string>()
+    const unused = AUTO_PALETTE.filter((hex) => !Object.values(CATEGORY_COLORS).includes(hex))
+    for (const c of categories) {
+      const fixed = CATEGORY_COLORS[c.name]
+      categoryColor.set(c.name, fixed ?? unused.shift() ?? AUTO_PALETTE[categoryColor.size % AUTO_PALETTE.length])
+    }
+    const colorOf = (category: string) => categoryColor.get(category)!
+
     const tileColor = new Map<string, string>()
     for (const c of categories) {
-      c.folders.forEach((f, i) => tileColor.set(f.path, adjustLightness(colorOf(c.name), i * LIGHTNESS_STEP)))
+      const base = colorOf(c.name)
+      const room = MAX_L - hexToHsl(base)[2]
+      const step = c.folders.length > 1 ? Math.min(LIGHTNESS_STEP, room / (c.folders.length - 1)) : 0
+      c.folders.forEach((f, i) => tileColor.set(f.path, adjustLightness(base, i * step)))
     }
 
     const tree: TreeDatum = {
       children: categories.map((c) => ({ children: c.folders.map((folder) => ({ folder })) })),
     }
 
-    // 간격은 CSS에서 px로 일정하게 주므로 레이아웃 자체는 빈틈 없이 계산
+    // 간격도 레이아웃 단위로 계산해서 트리맵 폭에 비례해 함께 줄어들게 함
     const minTile = Math.ceil(files.length * MIN_TILE_SHARE)
-    const layouts = LAYOUTS.map((l) => {
+    const tileCount = folders.size
+    const layouts = LAYOUTS.map((base) => {
+      const l = { ...base, h: Math.round(base.h * Math.max(1, tileCount / BASE_TILES)) }
       const root = treemap<TreeDatum>()
         .tile(treemapSquarify.ratio(1))
         .size([l.w, l.h])
+        .paddingInner((d) => (d.depth === 0 ? GAP_OTHER : GAP_SAME) / l.pxPerUnit)
         .round(false)(
         hierarchy(tree)
           // 작은 폴더도 글자가 들어가도록 최소 넓이 보장 (실제 수는 타일에 표시)
@@ -238,7 +272,6 @@ export default (() => {
     const portfolioImg: string | undefined = portfolio?.frontmatter?.imgUrl
 
     const pct = (v: number, total: number) => `${((v / total) * 100).toFixed(3)}%`
-    const px = (v: number) => `${v.toFixed(1)}px`
 
     return (
       <div class="home-overview">
@@ -273,15 +306,18 @@ export default (() => {
             {l.leaves.map((leaf) => {
               const folder = leaf.data.folder!
               const count = folder.docs.length
-              const tileW = (leaf.x1 - leaf.x0) * l.pxPerUnit - TILE_GAP
-              const tileH = (leaf.y1 - leaf.y0) * l.pxPerUnit - TILE_GAP
+              const tileW = (leaf.x1 - leaf.x0) * l.pxPerUnit
+              const tileH = (leaf.y1 - leaf.y0) * l.pxPerUnit
               const size = tileW >= 200 && tileH >= 130 ? "lg" : tileW >= 56 && tileH >= 50 ? "sm" : "xs"
               const scale = Math.max(0.5, Math.pow(((leaf.x1 - leaf.x0) * (leaf.y1 - leaf.y0)) / l.maxArea, 0.25))
-              const pad = PAD[size]
+              const pad = PAD_MAX * scale
               // 글자 크기는 트리맵 폭 기준(cqw)으로 내보내서 화면 폭이 달라도 계산한 배치가 유지되게 함
               const cq = (v: number) => `${((v / (l.w * l.pxPerUnit)) * 100).toFixed(3)}cqw`
               // 낮은 타일에서도 숫자 + 폴더 이름이 들어가도록 상한
-              const namePx = Math.min(Math.max(MIN_PX * STEP, HEAD_PX * scale), (tileH - 2 * pad) / (1.15 * (1 + 1 / STEP) + 0.2))
+              // 폴더 이름이 한 줄에 안 들어가면 아래 줄로 넘김 → 두 줄 높이까지 고려해서 상한
+              const baseNamePx = Math.max(MIN_PX * STEP, HEAD_PX * scale)
+              const nameLines = textWidth(folder.name, baseNamePx) * 1.12 > tileW - 2 * pad ? 2 : 1
+              const namePx = Math.min(baseNamePx, (tileH - 2 * pad) / (1.15 * (nameLines + 1 / STEP) + 0.2))
               const countPx = namePx / STEP
               const lines =
                 size === "xs"
@@ -290,7 +326,7 @@ export default (() => {
                       conceptCache.get(folder.path)!,
                       namePx / STEP,
                       (tileW - 2 * pad) * 0.92,
-                      tileH / 2 - (pad + namePx * 1.15 + GAP / 2),
+                      tileH / 2 - (pad + countPx * 1.15 + GAP / 2),
                     )
               const color = tileColor.get(folder.path)!
               return (
@@ -304,8 +340,13 @@ export default (() => {
                   }}
                 >
                   <div
-                    class={`home-tile ${isLightColor(color) ? "ink-dark" : "ink-light"}`}
-                    style={{ background: color, padding: px(pad) }}
+                    class="home-tile"
+                    style={{
+                      "--tile-light-bg": rgba(color, LIGHT_TINT),
+                      "--tile-light-ink": withLightness(color, INK_L),
+                      "--tile-dark-bg": rgba(color, DARK_ALPHA),
+                      padding: cq(pad),
+                    }}
                   >
                     <a
                       class="home-tile-link"
@@ -313,11 +354,11 @@ export default (() => {
                       title={`${folder.category} / ${folder.name} · ${count}`}
                       aria-label={`${folder.name} (${count})`}
                     ></a>
-                    <span class="count" style={{ fontSize: cq(countPx) }}>
-                      {count}
+                    <span class="name" style={{ fontSize: cq(namePx) }}>
+                      {folder.name}
                     </span>
                     {lines.length > 0 && (
-                      <div class="words" style={{ left: px(pad), right: px(pad), bottom: `calc(${px(pad + GAP / 2)} + ${cq(namePx * 1.15)})` }}>
+                      <div class="words" style={{ left: cq(pad), right: cq(pad), bottom: cq(pad + GAP / 2 + countPx * 1.15) }}>
                         {lines.map((line) => (
                           <div class="line" style={{ fontSize: cq(line.px) }}>
                             {line.words.map((w) => (
@@ -329,11 +370,9 @@ export default (() => {
                         ))}
                       </div>
                     )}
-                    {size !== "xs" && (
-                      <span class="name" style={{ fontSize: cq(namePx), left: px(pad), right: px(pad), bottom: px(pad) }}>
-                        {folder.name}
-                      </span>
-                    )}
+                    <span class="count" style={{ fontSize: cq(countPx), right: cq(pad), bottom: cq(pad) }}>
+                      {count}
+                    </span>
                   </div>
                 </div>
               )
@@ -345,7 +384,7 @@ export default (() => {
   }
 
   HomeGraph.css = `
-.home-overview { --home-gap: ${TILE_GAP}px; margin-top: ${GAP * PHI * PHI}px; }
+.home-overview { margin-top: ${GAP * PHI * PHI}px; }
 
 .home-links { display: flex; align-items: center; gap: ${GAP * PHI}px; }
 .home-portfolio {
@@ -381,9 +420,7 @@ export default (() => {
 
 .home-treemap {
   position: relative; container-type: inline-size;
-  width: calc(100% + var(--home-gap));
-  max-width: calc(${LAYOUTS[0].w * LAYOUTS[0].pxPerUnit}px + var(--home-gap));
-  margin: 0 calc(var(--home-gap) / -2);
+  width: 100%; max-width: ${LAYOUTS[0].w * LAYOUTS[0].pxPerUnit}px;
 }
 .home-treemap.tall { display: none; }
 @media (max-width: 800px) {
@@ -393,13 +430,13 @@ export default (() => {
 
 .home-cell { position: absolute; }
 .home-tile {
-  position: absolute; inset: calc(var(--home-gap) / 2);
+  position: absolute; inset: 0;
   box-sizing: border-box; overflow: hidden; border-radius: 8px;
-  display: flex; flex-direction: column; gap: var(--home-gap);
+  display: flex; flex-direction: column;
   transition: transform 0.22s ease-out;
 }
-.home-tile.ink-light { color: #fff; }
-.home-tile.ink-dark { color: #23272e; }
+.home-tile { background: var(--tile-light-bg); color: var(--tile-light-ink); }
+:root[saved-theme="dark"] .home-tile { background: var(--tile-dark-bg); color: #fff; }
 .home-cell:hover { z-index: 2; }
 .home-cell:hover .home-tile {
   transform: scale(1.06);
@@ -408,18 +445,17 @@ export default (() => {
 
 .home-tile-link { position: absolute; inset: 0; background: none !important; padding: 0 !important; }
 .home-tile .count, .home-tile .words, .home-tile .name { pointer-events: none; line-height: 1.15; }
+.home-tile .name {
+  position: relative; align-self: flex-start; max-width: 100%;
+  font-weight: 700; letter-spacing: -0.01em;
+  /* 좁은 카드에서는 말줄임 대신 아래 줄로 넘김 */
+  white-space: normal; overflow-wrap: anywhere;
+}
 .home-tile .count {
-  position: relative; align-self: flex-start;
+  position: absolute;
   font-weight: 400; letter-spacing: -0.02em; font-variant-numeric: tabular-nums;
 }
-.home-tile .name {
-  position: absolute; text-align: right;
-  font-weight: 700; letter-spacing: -0.01em;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.home-cell.xs .home-tile { align-items: center; justify-content: center; }
-.home-cell.xs .home-tile .count { align-self: center; }
-/* 키워드는 타일 세로 50% 지점부터, 폴더 이름 선을 넘으면 잘림 */
+/* 키워드는 타일 세로 50% 지점부터, 숫자 선을 넘으면 잘림 */
 .home-tile .words {
   position: absolute; top: 50%; overflow: hidden;
 }

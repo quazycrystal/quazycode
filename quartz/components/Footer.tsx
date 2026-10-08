@@ -30,9 +30,14 @@ export default ((opts?: Options) => {
           
           {/* 이메일 */}
           <a href="mailto:quazycrystal@gmail.com" target="_blank">
-            <img 
-              src={joinSegments(baseDir, "static/img/icons/email-white.png")} 
-              alt="Email" class="social-icon" 
+            {/* 라이트 모드는 검은 아이콘, 다크 모드는 흰 아이콘 (custom.scss) */}
+            <img
+              src={joinSegments(baseDir, "static/img/icons/email.png")}
+              alt="Email" class="social-icon icon-on-light"
+            />
+            <img
+              src={joinSegments(baseDir, "static/img/icons/email-white.png")}
+              alt="Email" class="social-icon icon-on-dark"
             />
           </a>
 
@@ -46,9 +51,13 @@ export default ((opts?: Options) => {
 
           {/* 깃헙 */}
           <a href="https://github.com/quazycrystal" target="_blank">
-            <img 
-              src={joinSegments(baseDir, "static/img/icons/github-white.png")} 
-              alt="Github" class="social-icon" 
+            <img
+              src={joinSegments(baseDir, "static/img/icons/github.png")}
+              alt="Github" class="social-icon icon-on-light"
+            />
+            <img
+              src={joinSegments(baseDir, "static/img/icons/github-white.png")}
+              alt="Github" class="social-icon icon-on-dark"
             />
           </a>
 
