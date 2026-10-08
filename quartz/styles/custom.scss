@@ -14,6 +14,11 @@
   opacity: 1; 
 }
 
+/* 테마별 아이콘: 라이트 모드는 검은 버전, 다크 모드는 흰 버전 */
+.social-icon.icon-on-dark { display: none; }
+:root[saved-theme="dark"] .social-icon.icon-on-light { display: none; }
+:root[saved-theme="dark"] .social-icon.icon-on-dark { display: block; }
+
 .social-icon:hover {
   transform: scale(1.2); /* (보너스) 살짝 1.1배 커지는 효과 */
 }
