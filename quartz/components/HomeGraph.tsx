@@ -14,7 +14,7 @@ const GAP = 10 // 기본 간격 단위(px)
 const GAP_SAME = 8
 const GAP_OTHER = GAP_SAME * PHI * PHI
 
-// 색 규칙 (CLAUDE.md "홈 화면 디자인 규칙" 참고)
+// 색 규칙
 // 허용 팔레트 안에서 채도 높고 밝은 색을 우선 쓰고, 같은 카테고리 안에서는 밝기(HSL L)만 조절함
 const CATEGORY_COLORS: Record<string, string> = {
   Algorithm: "#00A5CF",
@@ -43,7 +43,7 @@ const LAYOUTS = [
 ]
 const BASE_TILES = 12
 
-// 위계 규칙 (CLAUDE.md "위계" 참고). 기준 = 본문 제목(h1) 28px, 한 단계 = ÷√φ (두 단계가 1:φ)
+// 위계 규칙. 기준 = 본문 제목(h1) 28px, 한 단계 = ÷√φ (두 단계가 1:φ)
 // - 폴더 이름(왼쪽 위, 볼드): 가장 큰 타일에서 28px
 // - 숫자(오른쪽 아래, 보통): 가장 큰 타일에서 한 단계 작게 (22px)
 // - 키워드: 한 단계 작게(22px) 시작해서 줄이 바뀔 때마다 한 단계씩 작아짐
