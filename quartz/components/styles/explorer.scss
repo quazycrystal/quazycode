@@ -148,6 +148,8 @@ button.desktop-explorer {
 
   .folder-outer > ul {
     overflow: hidden;
+    // overflow: hidden 이라 스크롤 컨테이너가 되므로, contain 이면 휠이 바깥 목록까지 전달되지 않는다
+    overscroll-behavior: auto;
     margin-left: 6px;
     padding-left: 0.8rem;
     border-left: 1px solid var(--lightgray);
