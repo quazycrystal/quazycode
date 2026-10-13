@@ -13,10 +13,9 @@ const CV_URL = "https://quazycrystal.github.io/assets/img/JiwonKim_CV_25-11-14.p
 
 const PHI = 1.618
 const GAP = 10 // 기본 간격 단위(px)
-// 카드 사이 간격(px, 트리맵 기준 폭에서). 같은 상위 폴더끼리는 1em, 다른 상위 폴더와는 φ em(≈1.6em)
+// 카드 사이 간격(px). 가로·세로 모두 1em
 const EM = 16
-const GAP_SAME = EM
-const GAP_OTHER = EM * PHI
+const GAP_CARD = EM
 
 // 색 규칙
 // 허용 팔레트 안에서 채도 높고 밝은 색을 우선 쓰고, 같은 카테고리 안에서는 밝기(HSL L)만 조절함
@@ -35,18 +34,29 @@ const MAX_L = 85
 // 카드 투명감 (밝기와 투명도만 바꿈)
 // - 라이트 모드: 옅은 유리 틴트(LIGHT_TINT) + 같은 색을 아주 어둡게 한 글씨(밝기 INK_L%)
 // - 다크 모드: 원래 색을 DARK_ALPHA 로 반투명하게 + 흰 글씨
-const LIGHT_TINT = 0.45
+const LIGHT_TINT = 0.6
 const INK_L = 20
 const DARK_ALPHA = 0.6
 
-// 레이아웃 단위 → 실제 px (글자 배치 계산용). 트리맵은 최대 폭(w × pxPerUnit)으로 고정.
-// 높이는 카드를 배치한 결과로 정해짐 (줄이 늘면 세로로 길어짐)
-// cols = 1·2단계용 격자 칸 수, spans = 1·2단계 카드가 차지하는 칸 수 (가로·세로 같음)
-// smallCols = 3단계 이하 작은 카드를 한 줄에 몇 개씩 놓을지
-const LAYOUTS = [
-  { cls: "wide", w: 1000, pxPerUnit: 0.7, cols: 6, spans: [4, 2], smallCols: 4 },
-  { cls: "tall", w: 600, pxPerUnit: 0.57, cols: 2, spans: [2, 1], smallCols: 2 },
-]
+// 레이아웃(px). 카드 "열"(같은 크기 카드 1·2·3장을 세로로 쌓은 것)을 왼쪽부터 줄(band)에 채움.
+// 줄마다 높이를 조금씩 조절해서 줄 끝을 폭에 딱 맞춤 (justified rows). 마지막 줄만 덜 차도 됨
+// - 기준 폭 700px: 줄 높이 BASE_H 는 [1장][2장][3장] 열이 700px 에 딱 맞는 높이
+// - 화면이 넓어지면 카드 크기는 그대로 두고 폭만 3장 열 하나씩 늘려서 아래 카드가 옆으로 올라붙음.
+//   기준 폭보다 좁으면 비례해서 줄어듦
+// - 모바일: 기준 폭 342px, 줄 높이 = 전체 폭 카드의 φ:1 높이
+const BASE_W = 700
+const TALL_W = 342
+const WIDE_VARIANTS = 9
+
+// 줄 높이 H 일 때 n장 스택 열의 폭 (카드 φ:1, 카드 사이 세로 간격 g)
+const colWidth = (n: number, H: number, g: number) => (PHI * (H - (n - 1) * g)) / n
+// 열들(각 열의 장 수)이 폭 W 를 꽉 채우는 줄 높이
+const fitHeight = (stacks: number[], W: number, g: number) =>
+  (W - (stacks.length - 1) * g + stacks.reduce((s, n) => s + (PHI * (n - 1) * g) / n, 0)) /
+  stacks.reduce((s, n) => s + PHI / n, 0)
+const BASE_H = fitHeight([1, 2, 3], BASE_W, GAP_CARD)
+const WIDE_STEP = colWidth(3, BASE_H, GAP_CARD) + GAP_CARD
+const wideWidth = (i: number) => BASE_W + i * WIDE_STEP
 
 // 위계 규칙. 기준 = 본문 제목(h1) 28px, 한 단계 = ÷√φ (두 단계가 1:φ)
 // - 폴더 이름(왼쪽 위, 볼드): 가장 큰 타일에서 28px
@@ -57,13 +67,12 @@ const HEAD_PX = 28
 const STEP = Math.sqrt(PHI)
 const MIN_PX = 11
 const MAX_LINES = 8
-// 카드 배치: 모든 카드는 가로형 φ:1. 한 단계 내려갈 때마다 폭이 ½ 이라 작은 카드 2×2 가 큰 카드 자리에 딱 맞음.
-// 1·2단계는 φ:1 칸 격자 위에 놓음 (넓은 화면: 1단계 4×4칸 옆에 2단계 2×2칸 두 장이 세로로).
-// 3단계 이하 작은 카드는 그 아래에 한 줄 smallCols 개씩 (넓은 화면 ¼ 폭). 4단계는 너무 작아 3단계와 같게.
-// 크기 단계는 문서 수 순위: 0 → 1단계, 1~2 → 2단계, 3~6 → 3단계, 나머지 → 4단계
-// 상위 폴더마다 새 줄에서 시작하고, 위·왼쪽 빈 칸부터 채움 (마지막 줄만 덜 찰 수 있음)
-// 여러 칸 카드도 정확히 φ:1 이 되도록 세로 간격 = 가로 간격 ÷ φ
-const TIER_ENDS = [1, 3, 7]
+// 카드 배치: 모든 카드는 정확히 φ:1, 간격은 가로·세로 모두 1em.
+// 한 줄 안에서 1장·2장·3장 열의 높이가 같음 → 폭은 대략 1 : ½ : ⅓
+// 몇 장 스택에 들어갈지는 순위가 아니라 가장 큰 폴더 대비 문서 수 비율로 정함
+// (STACK_RATIOS[0] 이상 → 1장, STACK_RATIOS[1] 이상 → 2장, 나머지 → 3장)
+// 그래서 비슷한 폴더가 둘이면 1·1, 중간 폴더가 많으면 22·22 처럼 자유롭게 나옴
+const STACK_RATIOS = [1 / 2, 1 / 8]
 
 const prettify = (s: string) => s.replace(/_/g, " ")
 const isConceptSlug = (slug: string) =>
@@ -157,69 +166,103 @@ function layoutLines(concepts: Concept[], startPx: number, boxW: number, boxH: n
 }
 
 type Box = { folder: Folder; x0: number; y0: number; x1: number; y1: number }
-// groups = 상위 폴더별 카드 목록 (큰 카드부터)
-function gridLayout(
-  groups: { folder: Folder; tier: number }[][],
-  cols: number,
-  spans: number[],
-  smallCols: number,
-  W: number,
-  gSame: number,
-  gOther: number,
-) {
-  const gv = gSame / PHI
-  const u = (W - (cols - 1) * gSame) / cols
-  const uh = u / PHI
-  const su = (W - (smallCols - 1) * gSame) / smallCols
-  const sh = su / PHI
+// 카드 열: stack = 쌓인 장 수(1·2·3), folders = 위에서부터 카드
+type Column = { stack: number; folders: Folder[] }
+
+// 한 상위 폴더의 폴더(큰 순) → 1·2장 카드 열 목록 + 작은(3장 크기) 카드 목록
+// 크기 기준(max)은 전체에서 가장 큰 폴더의 문서 수
+function buildColumns(ordered: Folder[], max: number): { big: Column[]; small: Folder[] } {
+  const stackOf = new Map<Folder, number>()
+  for (const f of ordered) {
+    const r = f.docs.length / max
+    stackOf.set(f, r >= STACK_RATIOS[0] ? 1 : r >= STACK_RATIOS[1] ? 2 : 3)
+  }
+  // 2장 스택이 홀수면 반쪽 열이 생기므로 가장 작은 2장 카드를 3장 크기로 내림
+  const twos = ordered.filter((f) => stackOf.get(f) === 2)
+  if (twos.length % 2 === 1) {
+    stackOf.set(
+      twos.reduce((a, b) => (b.docs.length < a.docs.length ? b : a)),
+      3,
+    )
+  }
+  const done = new Set<Folder>()
+  const big: Column[] = []
+  for (const f of ordered) {
+    const stack = stackOf.get(f)!
+    if (done.has(f) || stack === 3) continue
+    const folders = ordered.filter((o) => !done.has(o) && stackOf.get(o) === stack).slice(0, stack)
+    folders.forEach((o) => done.add(o))
+    big.push({ stack, folders })
+  }
+  return { big, small: ordered.filter((f) => stackOf.get(f) === 3) }
+}
+
+// 1) 1·2장 열을 줄에 채움. 줄 끝에 남는 자리는 작은 카드 3장을 세로로 쌓은 열로 메움.
+//    3장이 안 차는 열은 맨 끝에만 (빈칸이 상위 폴더 블록의 오른쪽 아래 끝에만 생기게)
+//    기준 높이 H0 로 넘치기 직전까지 넣고, 다음 열은 넣어서 줄이는 쪽과 빼고 늘리는 쪽 중
+//    H0 에 더 가까운 쪽을 고름. 넘쳐서 끝난 줄은 높이를 맞춰 폭 W 를 꽉 채움 (아니면 H0 이하)
+// 2) 남은 작은 카드는 그 아래에 가로로 한 줄씩. 크기는 3장 열의 카드와 가장 가깝게, 줄 끝은 맞춤
+function justifiedLayout(big: Column[], small: Folder[], W: number, H0: number, g: number) {
+  const smallCols: Column[] = []
+  for (let k = 0; k < small.length; k += 3)
+    smallCols.push({ stack: 3, folders: small.slice(k, k + 3) })
+  const seq = [...big, ...smallCols]
+  const off = (H: number) => Math.abs(Math.log(H / H0))
+  const naturalW = (stacks: number[]) =>
+    stacks.reduce((s, n) => s + colWidth(n, H0, g), 0) + (stacks.length - 1) * g
+
   const boxes: Box[] = []
   let y = 0
-  groups.forEach((group, gi) => {
-    if (gi > 0) y += gOther
-    const used: boolean[][] = []
-    const free = (r: number, c: number, n: number) => {
-      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (used[r + i]?.[c + j]) return false
-      return true
-    }
-    let rows = 0
-    const big = group.filter((c) => c.tier <= spans.length)
-    const small = group.filter((c) => c.tier > spans.length)
-    for (const { folder, tier } of big) {
-      const n = Math.min(cols, spans[tier - 1])
-      let placed = false
-      for (let r = 0; !placed; r++) {
-        for (let c = 0; c <= cols - n && !placed; c++) {
-          if (!free(r, c, n)) continue
-          for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) (used[r + i] ??= [])[c + j] = true
-          const x0 = c * (u + gSame)
-          const y0 = y + r * (uh + gv)
-          boxes.push({
-            folder,
-            x0,
-            y0,
-            x1: x0 + n * u + (n - 1) * gSame,
-            y1: y0 + n * uh + (n - 1) * gv,
-          })
-          rows = Math.max(rows, r + n)
-          placed = true
-        }
+  let usedSmall = 0
+  // 3장 열로 시작하는 줄은 만들지 않음 (그 카드들은 가로 배치로)
+  for (let i = 0; i < seq.length && seq[i].stack < 3; ) {
+    const band = [seq[i++]]
+    let full = false
+    while (i < seq.length) {
+      const stacks = [...band, seq[i]].map((c) => c.stack)
+      const natural = naturalW(stacks)
+      if (natural > W) {
+        full = true
+        if (off(fitHeight(stacks, W, g)) < off(fitHeight(stacks.slice(0, -1), W, g)))
+          band.push(seq[i++])
+        break
       }
+      band.push(seq[i++])
     }
-    if (rows > 0) y += rows * uh + (rows - 1) * gv
-    // 작은 카드: 큰 카드 블록 아래에 한 줄 smallCols 개씩
-    small.forEach(({ folder }, i) => {
-      const r = Math.floor(i / smallCols)
-      const c = i % smallCols
-      const x0 = c * (su + gSame)
-      const y0 = y + (rows > 0 ? gv : 0) + r * (sh + gv)
-      boxes.push({ folder, x0, y0, x1: x0 + su, y1: y0 + sh })
+    const fit = fitHeight(
+      band.map((c) => c.stack),
+      W,
+      g,
+    )
+    const H = full ? fit : Math.min(fit, H0)
+    let x = 0
+    for (const col of band) {
+      if (col.stack === 3) usedSmall += col.folders.length
+      const w = colWidth(col.stack, H, g)
+      const h = w / PHI
+      col.folders.forEach((folder, k) => {
+        const y0 = y + k * (h + g)
+        boxes.push({ folder, x0: x, y0, x1: x + w, y1: y0 + h })
+      })
+      x += w + g
+    }
+    y += H + g
+  }
+
+  const rest = small.slice(usedSmall)
+  if (rest.length > 0) {
+    const ref = colWidth(3, H0, g)
+    const perRow = Math.max(1, Math.round((W + g) / (ref + g)))
+    const w = (W - (perRow - 1) * g) / perRow
+    const h = w / PHI
+    rest.forEach((folder, k) => {
+      const x0 = (k % perRow) * (w + g)
+      const y0 = y + Math.floor(k / perRow) * (h + g)
+      boxes.push({ folder, x0, y0, x1: x0 + w, y1: y0 + h })
     })
-    if (small.length > 0) {
-      const smallRows = Math.ceil(small.length / smallCols)
-      y += (rows > 0 ? gv : 0) + smallRows * sh + (smallRows - 1) * gv
-    }
-  })
-  return { boxes, h: y }
+    y += Math.ceil(rest.length / perRow) * (h + g)
+  }
+  return { boxes, h: y - g }
 }
 
 export default (() => {
@@ -322,34 +365,27 @@ export default (() => {
       c.folders.forEach((f, i) => tileColor.set(f.path, adjustLightness(base, i * step)))
     }
 
-    // 크기 단계(tier)는 문서 수 순위로 정함. 상위 폴더 안에서는 큰 카드부터
-    const tierOf = new Map<string, number>()
-    categories
-      .flatMap((c) => c.folders)
-      .sort((a, b) => b.docs.length - a.docs.length)
-      .forEach((f, rank) => tierOf.set(f.path, TIER_ENDS.filter((end) => rank >= end).length + 1))
-    const groups = categories.map((c) =>
-      c.folders
-        .map((folder) => ({ folder, tier: tierOf.get(folder.path)! }))
-        .sort((a, b) => a.tier - b.tier || b.folder.docs.length - a.folder.docs.length),
-    )
-
-    // 간격도 레이아웃 단위로 계산해서 트리맵 폭에 비례해 함께 줄어들게 함
-    const layouts = LAYOUTS.map((base) => {
-      const gSame = GAP_SAME / base.pxPerUnit
-      const gOther = GAP_OTHER / base.pxPerUnit
-      const { boxes, h } = gridLayout(
-        groups,
-        base.cols,
-        base.spans,
-        base.smallCols,
-        base.w,
-        gSame,
-        gOther,
-      )
+    // 상위 폴더마다 새 줄에서 시작 (블록 사이 간격도 1em)
+    const maxDocs = Math.max(...categories.flatMap((c) => c.folders.map((f) => f.docs.length)))
+    const blocks = categories.map((c) => buildColumns(c.folders, maxDocs))
+    const layout = (cls: string, w: number, H0: number) => {
+      const boxes: Box[] = []
+      let h = -GAP_CARD
+      for (const { big, small } of blocks) {
+        const block = justifiedLayout(big, small, w, H0, GAP_CARD)
+        const dy = h + GAP_CARD
+        for (const b of block.boxes) boxes.push({ ...b, y0: b.y0 + dy, y1: b.y1 + dy })
+        h = dy + block.h
+      }
       const maxArea = Math.max(...boxes.map((d) => (d.x1 - d.x0) * (d.y1 - d.y0)))
-      return { ...base, h, leaves: boxes, maxArea }
-    })
+      return { cls, w, h, boxes, maxArea }
+    }
+    const layouts = [
+      ...Array.from({ length: WIDE_VARIANTS + 1 }, (_, i) =>
+        layout(`wide v${i}`, wideWidth(i), BASE_H),
+      ),
+      layout("tall", TALL_W, TALL_W / PHI),
+    ]
 
     const conceptCache = new Map([...folders.values()].map((f) => [f.path, conceptsOf(f)]))
 
@@ -392,11 +428,11 @@ export default (() => {
 
         {layouts.map((l) => (
           <div class={`home-treemap ${l.cls}`} style={{ aspectRatio: `${l.w} / ${l.h}` }}>
-            {l.leaves.map((leaf) => {
+            {l.boxes.map((leaf) => {
               const folder = leaf.folder
               const count = folder.docs.length
-              const tileW = (leaf.x1 - leaf.x0) * l.pxPerUnit
-              const tileH = (leaf.y1 - leaf.y0) * l.pxPerUnit
+              const tileW = leaf.x1 - leaf.x0
+              const tileH = leaf.y1 - leaf.y0
               const size =
                 tileW >= 200 && tileH >= 130 ? "lg" : tileW >= 56 && tileH >= 50 ? "sm" : "xs"
               const scale = Math.max(
@@ -406,7 +442,7 @@ export default (() => {
               // 이름·키워드·숫자 사이 간격도 여백과 같은 비율로 줄임
               const innerGap = (GAP / 2) * scale
               // 글자 크기는 트리맵 폭 기준(cqw)으로 내보내서 화면 폭이 달라도 계산한 배치가 유지되게 함
-              const cq = (v: number) => `${((v / (l.w * l.pxPerUnit)) * 100).toFixed(3)}cqw`
+              const cq = (v: number) => `${((v / l.w) * 100).toFixed(3)}cqw`
               // 작은 타일에서는 폴더 이름이 한 줄 + 숫자가 들어가도록 줄이되, 최소 글자(MIN_PX) 아래로는 안 줄임
               // (최소 크기에서도 한 줄에 안 들어가면 CSS 가 아래 줄로 넘김)
               const baseNamePx = Math.max(MIN_PX * STEP, HEAD_PX * scale)
@@ -427,9 +463,7 @@ export default (() => {
               const countTop = pad + countPx + innerGap
               let wordsTop: number | undefined
               let lines =
-                size === "xs"
-                  ? []
-                  : layoutLines(concepts, namePx / STEP, wordsW, tileH / 2 - countTop)
+                size === "xs" ? [] : layoutLines(concepts, namePx / STEP, wordsW, tileH / 2 - countTop)
               if (lines.length === 0 && size !== "xs") {
                 wordsTop = pad + namePx + innerGap
                 lines = layoutLines(concepts, namePx / STEP, wordsW, tileH - wordsTop - countTop)
@@ -500,6 +534,17 @@ export default (() => {
     )
   }
 
+  // 폭별 배치: 그 폭이 들어가는 화면부터 다음 폭이 들어가기 전까지만 보임
+  const wideColumnsCss = Array.from({ length: WIDE_VARIANTS + 1 }, (_, i) => {
+    const w = wideWidth(i).toFixed(2)
+    const range = [
+      i > 0 ? `(width >= ${w}px)` : "",
+      i < WIDE_VARIANTS ? `(width < ${wideWidth(i + 1).toFixed(2)}px)` : "",
+    ]
+    const width = i > 0 ? `.home-treemap.v${i} { width: ${w}px; }\n` : ""
+    return `${width}@container home-overview ${range.filter(Boolean).join(" and ")} { .home-treemap.v${i} { display: block; } }`
+  }).join("\n")
+
   HomeGraph.css = `
 .home-overview { margin-top: ${GAP * PHI * PHI}px; }
 
@@ -528,20 +573,20 @@ export default (() => {
 
 .home-categories {
   display: flex; flex-wrap: wrap; gap: ${GAP / 2}px ${GAP * PHI}px;
-  margin: ${GAP * PHI * PHI}px 0 ${GAP}px;
+  margin: ${GAP * PHI * PHI}px 0 ${GAP_CARD}px; /* 카드와의 간격 = 카드 사이 간격(1em) */
   font-size: 0.9rem; color: var(--gray); font-variant-numeric: tabular-nums;
 }
 .home-categories span { display: inline-flex; align-items: center; gap: 0.4em; }
 .home-categories i { width: 0.65em; height: 0.65em; border-radius: 2px; display: inline-block; }
 .home-categories b { color: var(--darkgray); font-weight: 500; }
 
-.home-treemap {
-  position: relative; container-type: inline-size;
-  width: 100%; max-width: ${LAYOUTS[0].w * LAYOUTS[0].pxPerUnit}px;
-}
-.home-treemap.tall { display: none; }
+/* 보이는 폭에 맞는 배치 하나만 보여줌. 기준·모바일 배치는 폭에 비례해 줄어듦 */
+.home-overview { container: home-overview / inline-size; }
+.home-treemap { position: relative; container-type: inline-size; display: none; }
+.home-treemap.v0, .home-treemap.tall { width: 100%; max-width: ${BASE_W}px; }
+${wideColumnsCss}
 @media (max-width: 800px) {
-  .home-treemap.wide { display: none; }
+  .home-treemap.wide { display: none !important; }
   .home-treemap.tall { display: block; }
 }
 
