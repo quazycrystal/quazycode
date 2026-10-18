@@ -1,6 +1,10 @@
 동적 계획법(Dynamic Programming). 큰 문제를 작은 문제로 나눠, 작은 문제는 한 번만 계산해 dp 테이블에 저장하고 재사용
 - 조건: 최적 부분 구조. 작은 문제가 반복되고, 그 결과가 항상 같아야 함
+  - 큰 문제를 작은 문제로 나눌 수 있는가 (최적 부분 구조): f(n)을 구하려고 f(n-1), f(n-2) 같은 작은 결과를 씀
+  - 작은 문제의 답을 저장하고 재활용하는가 (중복되는 부분 문제): 똑같은 계산을 두 번 하지 않기
 - Bottom-up(작은 문제부터 반복문으로 채움) / Top-down(재귀 + 메모이제이션, [[재귀]])
+  - Top-down: 필요할 때 내려가서 가져옴. 재귀 함수 + 리스트·dict에 저장 (Memoization)
+  - Bottom-up: 미리 작은 값부터 쌓아 원하는 값까지 감. 반복문 + dp 테이블에 차례로 저장 (Tabulation)
 - 그리디는 지금 최선, DP는 '이 일이 일어나려면 바로 직전에 어떻게 했어야 했는지' ([[B11048_이동하기]])
 
 ```mermaid
@@ -38,5 +42,32 @@ for i in range(2, N + 1):
 ### 종료
 - 답은 `dp[N]`. 'i번째를 마지막으로 포함'처럼 정의했으면 `max(dp)` ([[B11053_가장_긴_증가하는_부분_수열]], [[B1912_연속합]])
 - 길이 1, 2처럼 점화식 전에 끝나는 경우 따로 처리 ([[B2579_계단_오르기]])
+
+### Top-down vs Bottom-up
+| | Top-down (재귀, Memoization) | Bottom-up (반복문, Tabulation) |
+|---|---|---|
+| 멈추는 지점 | 함수가 끝날 때 (return) | 테이블을 끝까지 채웠을 때 |
+| 기억 장소 | call stack + memo | 내가 만든 dp 테이블 |
+| 장점 | 점화식을 그대로 옮겨 간결 | 메모리를 직접 제어, 호출 비용 없음 |
+| 위험 | 너무 깊으면 `RecursionError` | 최종 데이터 크기(반복 횟수)를 미리 알아야 함 |
+
+피보나치 예시. Top-down은 아직 저장 안 된 값만 새로 계산해서 memo에 넣기
+```python
+memo = [0, 1]
+def fibo1(n):
+    if n >= len(memo):  # 저장 안 된 fibo1(n)만 새로 계산
+        memo.append(fibo1(n - 1) + fibo1(n - 2))
+    return memo[n]
+```
+Bottom-up은 함수 역할을 리스트가 해 줌
+```python
+def fibo2(n):
+    memo = [0, 1]
+    for i in range(2, n + 1):
+        memo.append(memo[i - 1] + memo[i - 2])
+    return memo[n]  # for 밖에서 return
+```
+- 원래 정리본의 fibo1은 계산한 값을 memo에 넣지 않아 메모이제이션이 안 됐고, fibo2는 return이 for 안에 들어가 있었음. 위는 고친 것
+- 보통 Tabulation이 더 빠른 편. 함수를 다시 부르지 않고 한 함수 안에서 계산만 반복하니 call stack에 쌓는 부가 시간이 없음
 
 관련: [[재귀]], [[Greedy]], [[백트래킹]]

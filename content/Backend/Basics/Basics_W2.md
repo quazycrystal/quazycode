@@ -1,5 +1,5 @@
 2026.10.06 (화) 저녁 8시 (비대면)
-### 의존성(Dependency)이란?
+### 1. 의존성(Dependency)이란?
 의존하고 있는 대상이 변하면 의존하고 있는 주체도 영향을 받음.
 ex) 클래스 안에 클래스 갖다 쓰는 거
 
@@ -29,7 +29,7 @@ class Minicar {
 약한 결합: 외부에서 객체를 주입받는 것
 -> 단, `DoubleMotor` 같은 구체 클래스를 주입받으면 그 타입에는 여전히 의존함. 인터페이스 타입으로 받으면 구현체를 바꿔 끼울 수 있어 더 느슨해짐 [[Class_Types]]
 
-### 의존성 주입(Dependency Injection)이란?
+### 2. 의존성 주입(Dependency Injection)이란?
 객체가 일하는데 필요한 의존 객체를 직접 만들지 않고 밖에서 받아 쓰는 것.
 
 ```java
@@ -75,10 +75,10 @@ flowchart TD
 - `this.motor = motor;` -> 파라미터를 Minicar의 필드에 저장 (이때도 주소 가리킴)
 - 어떤 모터를 쓸지는 `Minicar`를 만드는 쪽이 정함 -> `Minicar`는 `new DoubleMotor()`를 몰라도 됨
 
-### 의존성 주입 방식
+### 3. 의존성 주입 방식
 섞어 쓸 수도 있음: 필수는 생성자, 선택은 setter
 
-#### 1. 생성자 주입
+#### 3.1. 생성자 주입
 컨테이너가 생성자를 호출하면서 의존 객체를 파라미터로 넘겨줌
 생성자가 1개면 @Autowired 생략 가능
 
@@ -102,7 +102,7 @@ public class OrderService {
 	- 의존 객체가 많으면 파라미터가 길어짐 (생성 시 파라미터 여러 개 넣을테니) -> 클래스 책임이 너무 많다는 신호, ==클래스 쪼개자==
 - 사용: ==기본, 필수 의존==
 
-#### 2. setter 주입
+#### 3.2. setter 주입
 컨테이너가 기본 생성자로 객체를 먼저 만들고, 그 뒤에 setter를 호출해서 의존성을 넣음
 ==@Autowired== 필요
 
@@ -147,7 +147,7 @@ public class OrderService {
 }
 ```
 
-#### 3. 필드 주입
+#### 3.3. 필드 주입
 필드에 `@Autowired`만 붙이면 Spring이 직접 값을 넣음
 private이라 밖에서 접근 안 되어도 Setter, 생성자도 안 거치고 객체 안에 직접 쓸 수 있음
 
@@ -184,7 +184,7 @@ public class OrderService {
    (진짜 결제 서비스를 쓰면 실제로 결제가 되거나 DB가 필요한데, 가짜를 넣으면 그런 것 없이 `OrderService` 로직만 따로 확인 가능)
 4. **순환 참조를 시작 시점에 발견**: 실행 중이 아니라 앱 구동 때 에러가 남
 
-### IoC (Inversion of Control, 제어의 역전)
+### 4. IoC (Inversion of Control, 제어의 역전)
 객체를 만들고 연결하는 **제어권**을 개발자 코드가 아니라 **Spring 컨테이너**가 가짐
 - 내가 `new` 하던 것 -> 컨테이너가 객체(Bean)를 만들고 필요한 곳에 넣어 줌
 - DI는 IoC를 구현하는 방법 중 하나
@@ -256,8 +256,6 @@ OrderService orderService = ac.getBean("orderService", OrderService.class);
 - 메소드 주입도 같은 이유로 가능
 - 필드 주입은 Spring 밖에서 `new`하면 `null`
 - 생성자 주입은 `null` 상태가 없음
-
-
 
 ### 더 알아볼 내용 (질문)
 
