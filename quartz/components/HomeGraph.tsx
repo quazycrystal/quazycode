@@ -57,6 +57,9 @@ const fitHeight = (stacks: number[], W: number, g: number) =>
 const BASE_H = fitHeight([1, 2, 3], BASE_W, GAP_CARD)
 const WIDE_STEP = colWidth(3, BASE_H, GAP_CARD) + GAP_CARD
 const wideWidth = (i: number) => BASE_W + i * WIDE_STEP
+// 배치 i 가 보이기 시작하는 컨테이너 폭 = 그 배치의 폭. 이 폭부터 아랫줄 카드가 옆으로 올라붙고,
+// 그 사이엔 배치가 폭에 비례해 연속으로 늘어남
+const wideStart = (i: number) => (i === 0 ? 0 : wideWidth(i))
 
 // 위계 규칙. 기준 = 본문 제목(h1) 28px, 한 단계 = ÷√φ (두 단계가 1:φ)
 // - 폴더 이름(왼쪽 위, 볼드): 가장 큰 타일에서 28px
@@ -134,13 +137,19 @@ type Line = { px: number; words: Concept[] }
 
 // 키워드를 무거운 순서대로 줄에 채움. 줄이 바뀔 때마다 글자가 한 단계(÷√φ)씩 작아짐.
 // 타일 세로 50% 지점부터 폴더 이름 선까지(boxH) 다 들어가는 줄만 남김
-function layoutLines(concepts: Concept[], startPx: number, boxW: number, boxH: number): Line[] {
+function layoutLines(
+  concepts: Concept[],
+  startPx: number,
+  boxW: number,
+  boxH: number,
+  minPx: number,
+): Line[] {
   if (boxW <= 0 || boxH <= 0) return []
   const lines: Line[] = []
   const queue = [...concepts]
   let usedH = 0
   for (let i = 0; i < MAX_LINES && queue.length > 0; i++) {
-    const px = Math.max(MIN_PX, startPx / Math.pow(STEP, i))
+    const px = Math.max(minPx, startPx / Math.pow(STEP, i))
     const line: Line = { px, words: [] }
     // 키워드 사이 간격은 글자 크기에 비례 (CSS column-gap: 0.5em 과 같음)
     const colGap = 0.5 * px
@@ -368,21 +377,45 @@ export default (() => {
     // 상위 폴더마다 새 줄에서 시작 (블록 사이 간격도 1em)
     const maxDocs = Math.max(...categories.flatMap((c) => c.folders.map((f) => f.docs.length)))
     const blocks = categories.map((c) => buildColumns(c.folders, maxDocs))
-    const layout = (cls: string, w: number, H0: number) => {
+    const layout = (cls: string, w: number, H0: number, wide = false) => {
       const boxes: Box[] = []
       let h = -GAP_CARD
+      // 큰 열 없이 작은 카드뿐이고 한 줄에 다 들어가는 블록은, 앞 블록이 한 줄짜리면 그 오른쪽 빈 곳에 이어 붙임
+      // (좁으면 자연히 새 줄. 상위 폴더 구분은 색으로)
+      const perRow = Math.max(
+        1,
+        Math.round((w + GAP_CARD) / (colWidth(3, H0, GAP_CARD) + GAP_CARD)),
+      )
+      let row: { x: number; y: number; h: number } | undefined
       for (const { big, small } of blocks) {
         const block = justifiedLayout(big, small, w, H0, GAP_CARD)
+        const single = big.length === 0 && small.length <= perRow
+        const extent = Math.max(...block.boxes.map((b) => b.x1))
+        if (single && row && row.x + GAP_CARD + extent <= w + 0.01) {
+          for (const b of block.boxes)
+            boxes.push({
+              ...b,
+              x0: b.x0 + row.x + GAP_CARD,
+              x1: b.x1 + row.x + GAP_CARD,
+              y0: b.y0 + row.y,
+              y1: b.y1 + row.y,
+            })
+          row.x += GAP_CARD + extent
+          continue
+        }
         const dy = h + GAP_CARD
         for (const b of block.boxes) boxes.push({ ...b, y0: b.y0 + dy, y1: b.y1 + dy })
+        row = single ? { x: extent, y: dy, h: block.h } : undefined
         h = dy + block.h
       }
       const maxArea = Math.max(...boxes.map((d) => (d.x1 - d.x0) * (d.y1 - d.y0)))
-      return { cls, w, h, boxes, maxArea }
+      // 글자 배율: 카드가 √(폭/기준폭) 배 커질 때 글자는 √ 만큼만 커지게 (카드 대비 글자가 작아져 키워드가 더 많이 들어감)
+      const tf = wide ? Math.pow(BASE_W / w, 0.25) : 1
+      return { cls, w, h, boxes, maxArea, tf }
     }
     const layouts = [
       ...Array.from({ length: WIDE_VARIANTS + 1 }, (_, i) =>
-        layout(`wide v${i}`, wideWidth(i), BASE_H),
+        layout(`wide v${i}`, wideWidth(i), BASE_H, true),
       ),
       layout("tall", TALL_W, TALL_W / PHI),
     ]
@@ -445,10 +478,11 @@ export default (() => {
               const cq = (v: number) => `${((v / l.w) * 100).toFixed(3)}cqw`
               // 작은 타일에서는 폴더 이름이 한 줄 + 숫자가 들어가도록 줄이되, 최소 글자(MIN_PX) 아래로는 안 줄임
               // (최소 크기에서도 한 줄에 안 들어가면 CSS 가 아래 줄로 넘김)
-              const baseNamePx = Math.max(MIN_PX * STEP, HEAD_PX * scale)
+              const minPx = MIN_PX * l.tf
+              const baseNamePx = Math.max(minPx * STEP, HEAD_PX * scale * l.tf)
               // 카드 안쪽 여백 = 카드에서 가장 큰 글자(폴더 이름) 크기. 여백까지 넣고 폭·높이에 맞춤
               const namePx = Math.max(
-                MIN_PX,
+                minPx,
                 Math.min(
                   baseNamePx,
                   tileW / (textWidth(folder.name, 1) * 1.12 + 2),
@@ -456,17 +490,25 @@ export default (() => {
                 ),
               )
               const pad = namePx
-              const countPx = Math.max(MIN_PX, namePx / STEP / STEP) // 이름보다 두 단계 작게
+              const countPx = Math.max(minPx, namePx / STEP / STEP) // 이름보다 두 단계 작게
               // 키워드는 세로 50% 지점부터. 작은 카드라 한 줄도 안 들어가면 폴더 이름 바로 아래부터
               const concepts = conceptCache.get(folder.path)!
               const wordsW = (tileW - 2 * pad) * 0.92
               const countTop = pad + countPx + innerGap
               let wordsTop: number | undefined
               let lines =
-                size === "xs" ? [] : layoutLines(concepts, namePx / STEP, wordsW, tileH / 2 - countTop)
+                size === "xs"
+                  ? []
+                  : layoutLines(concepts, namePx / STEP, wordsW, tileH / 2 - countTop, minPx)
               if (lines.length === 0 && size !== "xs") {
                 wordsTop = pad + namePx + innerGap
-                lines = layoutLines(concepts, namePx / STEP, wordsW, tileH - wordsTop - countTop)
+                lines = layoutLines(
+                  concepts,
+                  namePx / STEP,
+                  wordsW,
+                  tileH - wordsTop - countTop,
+                  minPx,
+                )
               }
               const color = tileColor.get(folder.path)!
               return (
@@ -534,15 +576,13 @@ export default (() => {
     )
   }
 
-  // 폭별 배치: 그 폭이 들어가는 화면부터 다음 폭이 들어가기 전까지만 보임
+  // 폭별 배치: 컨테이너 폭이 wideStart(i) 이상 wideStart(i+1) 미만일 때만 보임. 보이는 배치는 폭 100% 로 비례해 늘어남
   const wideColumnsCss = Array.from({ length: WIDE_VARIANTS + 1 }, (_, i) => {
-    const w = wideWidth(i).toFixed(2)
     const range = [
-      i > 0 ? `(width >= ${w}px)` : "",
-      i < WIDE_VARIANTS ? `(width < ${wideWidth(i + 1).toFixed(2)}px)` : "",
+      i > 0 ? `(width >= ${wideStart(i).toFixed(2)}px)` : "",
+      i < WIDE_VARIANTS ? `(width < ${wideStart(i + 1).toFixed(2)}px)` : "",
     ]
-    const width = i > 0 ? `.home-treemap.v${i} { width: ${w}px; }\n` : ""
-    return `${width}@container home-overview ${range.filter(Boolean).join(" and ")} { .home-treemap.v${i} { display: block; } }`
+    return `@container home-overview ${range.filter(Boolean).join(" and ")} { .home-treemap.v${i} { display: block; } }`
   }).join("\n")
 
   HomeGraph.css = `
@@ -583,7 +623,7 @@ export default (() => {
 /* 보이는 폭에 맞는 배치 하나만 보여줌. 기준·모바일 배치는 폭에 비례해 줄어듦 */
 .home-overview { container: home-overview / inline-size; }
 .home-treemap { position: relative; container-type: inline-size; display: none; }
-.home-treemap.v0, .home-treemap.tall { width: 100%; max-width: ${BASE_W}px; }
+.home-treemap { width: 100%; }
 ${wideColumnsCss}
 @media (max-width: 800px) {
   .home-treemap.wide { display: none !important; }

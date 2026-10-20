@@ -96,6 +96,14 @@ export default (() => {
         <meta name="description" content={description} />
         <meta name="generator" content="Quartz" />
 
+        {/* 제목 폰트는 첫 화면부터 쓰이니 미리 받아둠 (늦게 바뀌는 깜빡임 방지) */}
+        <link
+          rel="preload"
+          href={`${baseDir}/static/fonts/Greca-Convert.ttf`}
+          as="font"
+          type="font/ttf"
+          crossOrigin="anonymous"
+        />
         {/* [여기에 추가됨] 커스텀 폰트 설정 (경로 자동 계산) */}
         <style>{`
           @font-face {
@@ -111,7 +119,7 @@ export default (() => {
             src: url('${baseDir}/static/fonts/Greca-Convert.ttf') format('truetype');
             font-weight: normal;
             font-style: normal;
-            font-display: swap;
+            font-display: block;
           }
         `}</style>
 

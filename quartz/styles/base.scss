@@ -5,6 +5,8 @@
 @use "./callouts.scss";
 
 html {
+  // 1200px 이상에서는 화면 폭에 비례해 글자·여백·사이드바가 함께 커짐 (rem 기준)
+  font-size: clamp(16px, 1.3334vw, 32px);
   scroll-behavior: smooth;
   text-size-adjust: none;
   overflow-x: hidden;
@@ -156,7 +158,6 @@ a {
 }
 
 .page {
-  max-width: calc(#{map.get($breakpoints, desktop)} + 300px);
   margin: 0 1rem; //auto;
   & article {
     & > h1 {
