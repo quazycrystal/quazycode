@@ -132,8 +132,9 @@ Setter 주입이랑 유사하게, Setter 대신 일반 메소드로 의존 객�
 
 - Setter와의 차이: ==기능 차이가 아니라 관례 차이==
 	- setter는 `setXxx` 이름 + 파라미터 1개가 관례 (필드 하나를 세팅하는 용도)
-	- 메소드 주입은 이름이 자유롭고, 관례 상 여러 의존성을 한 번에 받는 용도로 씀
-	- Spring은 둘을 똑같이 처리함
+	- 메소드 주입은 이름이 자유롭고, 파라미터를 여러 개 받을 수 있음 (각 파라미터가 컨테이너에서 맞는 Bean으로 주입됨)
+	- Spring 공식 Javadoc: setter는 이런 일반 메소드("config method")의 특수한 경우일 뿐이고, `public`일 필요도 없음
+	- 주의: Spring 문서의 "Method Injection"이라는 항목은 다른 기능 (싱글톤이 매번 새 프로토타입 Bean을 받게 하는 Lookup Method Injection)
 
 ```java
 @Service
@@ -166,7 +167,6 @@ public class OrderService {
 	- `final` 불가
 	- 의존성이 몇 개인지 눈에 안 띔
 	- Spring 밖에서 `new`하면 의존성이 `null`
-- 쓰는 때: 실무 코드에서는 비권장 (테스트 코드에서 간혹 사용)
 
 |                | 생성자                  | setter                  | 필드             |
 | -------------- | -------------------- | ----------------------- | -------------- |
@@ -174,7 +174,7 @@ public class OrderService {
 | `null` 방지      | 보장                   | 보장 안 됨                  | 보장 안 됨         |
 | 단위 테스트 (JUnit) | 쉬움 (`new`로 가짜 바로 전달) | 가능 (`new` 후 setter로 전달) | 어려움 (넣을 통로 없음) |
 | 의존성 파악         | 생성자만 보면 됨            | setter를 찾아야 함           | 필드를 다 봐야 함     |
-| 권장             | 필수 의존성               | 선택 의존성                  | 비권장            |
+| 권장             | 필수 의존성               | 선택 의존성                  | -              |
 
 ##### 생성자 주입을 권장하는 이유
 
@@ -227,10 +227,6 @@ OrderService orderService = ac.getBean("orderService", OrderService.class);
 - `getBean(이름, 타입)`으로 꺼내 쓸 수 있음
 - Spring Boot에서는 이 과정을 자동으로 해 줌 (`@SpringBootApplication`, `@Service`, `@Component` 스캔) [[Basics_W1]]
 
-### 참고
-- [Dependency Injection :: Spring Framework](https://docs.spring.io/spring-framework/reference/core/beans/dependencies/factory-collaborators.html)
-- [Spring Beans and Dependency Injection :: Spring Boot](https://docs.spring.io/spring-boot/reference/using/spring-beans-and-dependency-injection.html)
-
 ### 토론 주제
 1. 왜 생성자 주입 방법이 기본이 되었을까?
 	편해서, 한 번에 클래스 안에 있는거 다 만들어준다 - 생길때 null 없이 같이 들어온다, oop 유지
@@ -256,6 +252,13 @@ OrderService orderService = ac.getBean("orderService", OrderService.class);
 - 메소드 주입도 같은 이유로 가능
 - 필드 주입은 Spring 밖에서 `new`하면 `null`
 - 생성자 주입은 `null` 상태가 없음
+
+### 참고 링크
+- Spring, Dependency Injection: https://docs.spring.io/spring-framework/reference/core/beans/dependencies/factory-collaborators.html
+- Spring, Using @Autowired: https://docs.spring.io/spring-framework/reference/core/beans/annotation-config/autowired.html
+- Spring, @Autowired Javadoc: https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/beans/factory/annotation/Autowired.html
+- Spring, Introduction to the IoC Container and Beans: https://docs.spring.io/spring-framework/reference/core/beans/introduction.html
+- Spring, Using the @Bean Annotation: https://docs.spring.io/spring-framework/reference/core/beans/java/bean-annotation.html
 
 ### 더 알아볼 내용 (질문)
 
