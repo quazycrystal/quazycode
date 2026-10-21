@@ -223,6 +223,8 @@ function justifiedLayout(big: Column[], small: Folder[], W: number, H0: number, 
   const boxes: Box[] = []
   let y = 0
   let usedSmall = 0
+  // 첫 줄의 높이와 오른쪽 끝 (뒤 블록이 그 오른쪽 빈 곳에 올라붙을 때 씀)
+  let first: { h: number; right: number } | undefined
   // 3장 열로 시작하는 줄은 만들지 않음 (그 카드들은 가로 배치로)
   for (let i = 0; i < seq.length && seq[i].stack < 3; ) {
     const band = [seq[i++]]
@@ -255,6 +257,7 @@ function justifiedLayout(big: Column[], small: Folder[], W: number, H0: number, 
       })
       x += w + g
     }
+    first ??= { h: H, right: x - g }
     y += H + g
   }
 
@@ -271,7 +274,7 @@ function justifiedLayout(big: Column[], small: Folder[], W: number, H0: number, 
     })
     y += Math.ceil(rest.length / perRow) * (h + g)
   }
-  return { boxes, h: y - g }
+  return { boxes, h: y - g, first }
 }
 
 export default (() => {
@@ -380,6 +383,9 @@ export default (() => {
     const layout = (cls: string, w: number, H0: number, wide = false) => {
       const boxes: Box[] = []
       let h = -GAP_CARD
+      // 앞 블록 첫 줄 오른쪽에 3장 열이 하나 이상 들어갈 빈 폭이 남으면, 작은 카드뿐인 다음 블록을
+      // 그 줄 맨 위에서부터 3장 열 단위로 채움 (한 열에 다른 블록 카드를 섞지 않음). 못 들어간 카드는 아래 줄로
+      let region: { x: number; y: number; colW: number; cols: number } | undefined
       // 큰 열 없이 작은 카드뿐이고 한 줄에 다 들어가는 블록은, 앞 블록이 한 줄짜리면 그 오른쪽 빈 곳에 이어 붙임
       // (좁으면 자연히 새 줄. 상위 폴더 구분은 색으로)
       const perRow = Math.max(
@@ -388,6 +394,26 @@ export default (() => {
       )
       let row: { x: number; y: number; h: number } | undefined
       for (const { big, small } of blocks) {
+        if (big.length === 0 && region && region.cols > 0) {
+          const take = Math.min(region.cols, Math.ceil(small.length / 3))
+          const ch = region.colW / PHI
+          small.slice(0, take * 3).forEach((folder, k) => {
+            const x0 = region!.x + Math.floor(k / 3) * (region!.colW + GAP_CARD)
+            const y0 = region!.y + (k % 3) * (ch + GAP_CARD)
+            boxes.push({ folder, x0, y0, x1: x0 + region!.colW, y1: y0 + ch })
+          })
+          region.x += take * (region.colW + GAP_CARD)
+          region.cols -= take
+          const rest = small.slice(take * 3)
+          if (rest.length > 0) {
+            const below = justifiedLayout([], rest, w, H0, GAP_CARD)
+            const dy = h + GAP_CARD
+            for (const b of below.boxes) boxes.push({ ...b, y0: b.y0 + dy, y1: b.y1 + dy })
+            h = dy + below.h
+          }
+          row = undefined
+          continue
+        }
         const block = justifiedLayout(big, small, w, H0, GAP_CARD)
         const single = big.length === 0 && small.length <= perRow
         const extent = Math.max(...block.boxes.map((b) => b.x1))
@@ -407,6 +433,12 @@ export default (() => {
         for (const b of block.boxes) boxes.push({ ...b, y0: b.y0 + dy, y1: b.y1 + dy })
         row = single ? { x: extent, y: dy, h: block.h } : undefined
         h = dy + block.h
+        region = undefined
+        if (block.first) {
+          const colW = colWidth(3, block.first.h, GAP_CARD)
+          const cols = Math.floor((w - block.first.right) / (colW + GAP_CARD) + 1e-6)
+          if (cols > 0) region = { x: block.first.right + GAP_CARD, y: dy, colW, cols }
+        }
       }
       const maxArea = Math.max(...boxes.map((d) => (d.x1 - d.x0) * (d.y1 - d.y0)))
       // 글자 배율: 카드가 √(폭/기준폭) 배 커질 때 글자는 √ 만큼만 커지게 (카드 대비 글자가 작아져 키워드가 더 많이 들어감)
